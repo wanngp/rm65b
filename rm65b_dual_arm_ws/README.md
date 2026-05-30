@@ -31,29 +31,53 @@ handling. Use an ASCII-only workspace path for full official-driver builds.
 
 ## VMware Ubuntu bootstrap
 
-Run the bootstrap script inside the Ubuntu VM:
+Use Ubuntu 22.04 with ROS 2 Humble. VMware Ubuntu is the delivery target; WSL2
+Ubuntu 22.04 is acceptable for development and local checks if GUI support is
+available.
+
+Expected external software:
+
+- Ubuntu 22.04 Jammy, x86_64.
+- ROS 2 Humble deb packages, including ROS base, RViz2, MoveIt2, ros2_control,
+  rosbag2, and common build tools.
+- Gazebo Harmonic and ROS-Gazebo bridge packages.
+- Python 3 with PyYAML, NumPy, and OpenCV.
+- `colcon`, CMake, GCC/G++, `ffmpeg`, `x11-utils`, and optional `xdotool`.
+
+Official installation references:
+
+- ROS 2 Humble Ubuntu deb packages:
+  <https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html>
+- Gazebo Harmonic Ubuntu binaries:
+  <https://gazebosim.org/docs/harmonic/install_ubuntu/>
+
+For a fresh VM, run the all-in-one bootstrap command inside Ubuntu:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/bootstrap_vmware_ubuntu.sh
+bash scripts/bootstrap_vmware_ubuntu.sh --all
 ```
 
-The script checks for the official RealMan `ros2_rm_robot` source, downloads it
-only when it is missing, copies it to `src/ros2_rm_robot`, and checks the Ubuntu
-ROS2 environment.
+`--all` configures the official ROS2 and Gazebo apt sources, installs available
+dependencies through apt, downloads or reuses the official RealMan
+`ros2_rm_robot` source, cleans generated build state, checks the environment,
+and builds the workspace.
 
-To let the script install missing system dependencies through apt, add the
-explicit install flag:
+If apt sources are already managed by the VM owner, use:
 
 ```bash
-bash scripts/bootstrap_vmware_ubuntu.sh --install-apt-deps
+bash scripts/bootstrap_vmware_ubuntu.sh --install-apt-deps --clean-build
 ```
 
-This runs `sudo apt-get update` and installs available base, ROS2 Humble,
-MoveIt2, Gazebo/ros_gz, colcon, Python YAML, and ffmpeg packages. It does not
-rewrite apt sources. If ROS2 or Gazebo packages are unavailable from the VM's
-current apt sources, the script reports those packages and leaves the source
-configuration to the VM owner.
+If dependencies are already installed and only a build is needed, use:
+
+```bash
+bash scripts/bootstrap_vmware_ubuntu.sh --build
+```
+
+The apt step installs available base, ROS2 Humble, MoveIt2, Gazebo/ros_gz,
+colcon, Python YAML/NumPy/OpenCV, ffmpeg, and GUI helper packages. If a package
+is unavailable from the current apt sources, the script reports it.
 
 If the VM already has RealMan packages in another workspace, reuse them instead
 of downloading again:
@@ -78,7 +102,7 @@ build the workspace:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/bootstrap_vmware_ubuntu.sh --install-apt-deps --build
+bash scripts/bootstrap_vmware_ubuntu.sh --all
 ```
 
 If the VM already has a usable RealMan workspace, reuse it as an underlay:
@@ -91,7 +115,23 @@ bash scripts/bootstrap_vmware_ubuntu.sh \
   --build
 ```
 
-Start with Day 01 to check the visual effect and generated evidence:
+Start with Day 01 visual inspection. This opens Gazebo GUI and writes logs and
+evidence under `~/rm65b_visual_*`:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day_visual.sh day01
+```
+
+Expected result: a Gazebo window opens with the RM65-B dual-arm scene. The
+terminal prints the output directory, for example
+`~/rm65b_visual_20260530_173000/day01`. If the GUI does not open, first check
+that `echo $DISPLAY` or `echo $WAYLAND_DISPLAY` is non-empty, then inspect
+`$OUT/logs/run_day_visual_backend.log` and `$OUT/logs/run_day_visual_gz_gui.log`.
+In WSL, GUI support depends on WSLg or an external X server; VMware Ubuntu with
+a desktop session is the preferred visual environment.
+
+If you only want generated evidence without opening Gazebo GUI:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
@@ -104,7 +144,7 @@ export DOMAIN=211
 export OUT="$OPS_ROOT/$DAY"
 mkdir -p "$OUT"
 
-RECORD_RVIZ=1 CAPTURE_TIMEOUT=360 \
+RECORD_RVIZ=0 CAPTURE_TIMEOUT=360 \
   bash scripts/play_harmonic_planned_record.sh "$OUT" "$PWD" "$DOMAIN" "$DAY"
 ```
 

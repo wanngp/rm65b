@@ -14,8 +14,10 @@ EXISTING_SETUP=""
 SKIP_DOWNLOAD=0
 FORCE_REFRESH_TARGET=0
 SKIP_PROJECT_VERIFY=0
+SETUP_APT_SOURCES=0
 INSTALL_APT_DEPS=0
 RUN_BUILD=0
+CLEAN_BUILD=0
 
 official_required=(
   README.md
@@ -52,8 +54,11 @@ Options:
   --skip-download             Fail instead of downloading a missing archive.
   --force-refresh-target      Replace an incomplete src/ros2_rm_robot target.
   --skip-project-verify       Skip scripts/verify_project.py.
+  --setup-apt-sources         Configure official ROS2 and Gazebo apt sources.
   --install-apt-deps          Install missing apt dependencies with sudo apt-get.
   --build                     Run colcon build after checks.
+  --clean-build               Remove this workspace's build/install/log before building.
+  --all                       Install apt dependencies, clean generated state, and build.
   -h, --help                  Show this help.
 EOF
 }
@@ -69,6 +74,53 @@ die() {
 
 have_cmd() {
   command -v "$1" >/dev/null 2>&1
+}
+
+source_setup_file() {
+  local setup_file="$1"
+  # ROS/ament setup files may read unset variables internally; keep this
+  # bootstrap script strict while sourcing those external files.
+  set +u
+  # shellcheck disable=SC1090
+  source "$setup_file"
+  set -u
+}
+
+remove_generated_package_dir() {
+  local path="$1"
+  [[ -e "$path" ]] || return 0
+  case "$path" in
+    "$WORKSPACE"/build/*|"$WORKSPACE"/install/*|"$WORKSPACE"/log/*)
+      rm -rf "$path"
+      ;;
+    *)
+      die "Refusing to remove generated path outside workspace build/install/log: $path"
+      ;;
+  esac
+}
+
+clean_package_build_state() {
+  local package_name="$1"
+  log INFO "Cleaning generated colcon state for $package_name."
+  remove_generated_package_dir "$WORKSPACE/build/$package_name"
+  remove_generated_package_dir "$WORKSPACE/install/$package_name"
+  remove_generated_package_dir "$WORKSPACE/log/latest_build/$package_name"
+}
+
+clean_workspace_build_state() {
+  log WARN "Cleaning generated build/install/log under $WORKSPACE."
+  local path
+  for path in "$WORKSPACE/build" "$WORKSPACE/install" "$WORKSPACE/log"; do
+    [[ -e "$path" ]] || continue
+    case "$path" in
+      "$WORKSPACE"/build|"$WORKSPACE"/install|"$WORKSPACE"/log)
+        rm -rf "$path"
+        ;;
+      *)
+        die "Refusing to remove generated path outside workspace: $path"
+        ;;
+    esac
+  done
 }
 
 sudo_cmd() {
@@ -248,6 +300,63 @@ install_available_apt_packages() {
   done
 }
 
+setup_apt_sources_if_requested() {
+  if [[ "$SETUP_APT_SOURCES" -ne 1 ]]; then
+    log INFO "Apt source setup not requested. Add --setup-apt-sources for fresh Ubuntu systems."
+    return 0
+  fi
+  have_cmd apt-get || die "apt-get is not available on this system."
+  if [[ "$(id -u)" -ne 0 ]] && ! have_cmd sudo; then
+    die "sudo is required for --setup-apt-sources when not running as root."
+  fi
+
+  local codename=""
+  if [[ -r /etc/os-release ]]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    codename="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
+  fi
+  if [[ -z "$codename" ]] && have_cmd lsb_release; then
+    codename="$(lsb_release -cs)"
+  fi
+  [[ -n "$codename" ]] || die "Could not determine Ubuntu codename for apt sources."
+
+  log INFO "Installing apt source helper packages."
+  sudo_cmd env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=120 update
+  sudo_cmd env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=120 install -y \
+    ca-certificates curl gnupg lsb-release software-properties-common
+
+  log INFO "Enabling Ubuntu universe repository."
+  sudo_cmd add-apt-repository -y universe
+
+  log INFO "Configuring ROS2 apt source for Ubuntu $codename."
+  local ros_source_version=""
+  ros_source_version="$(curl -fsSL https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest \
+    | grep -F '"tag_name"' | awk -F'"' '{print $4}' | head -n 1 || true)"
+  if [[ -n "$ros_source_version" ]]; then
+    curl -fsSL \
+      -o /tmp/ros2-apt-source.deb \
+      "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ros_source_version}/ros2-apt-source_${ros_source_version}.${codename}_all.deb"
+    sudo_cmd dpkg -i /tmp/ros2-apt-source.deb
+  else
+    log WARN "Could not resolve latest ros2-apt-source release; using legacy ros2.list setup."
+    sudo_cmd curl -fsSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
+      -o /usr/share/keyrings/ros-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $codename main" \
+      | sudo_cmd tee /etc/apt/sources.list.d/ros2.list >/dev/null
+  fi
+
+  log INFO "Configuring Gazebo Harmonic apt source for Ubuntu $codename."
+  sudo_cmd curl -fsSL https://packages.osrfoundation.org/gazebo.gpg \
+    -o /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable $codename main" \
+    | sudo_cmd tee /etc/apt/sources.list.d/gazebo-stable.list >/dev/null
+
+  log INFO "Refreshing apt package index after source setup."
+  sudo_cmd env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=120 update
+  log OK "Apt source setup complete."
+}
+
 install_apt_deps_if_requested() {
   if [[ "$INSTALL_APT_DEPS" -ne 1 ]]; then
     log INFO "Apt dependency installation not requested. Add --install-apt-deps to install missing packages."
@@ -279,12 +388,17 @@ install_apt_deps_if_requested() {
     unzip
     wget
     x11-utils
+    libgl1-mesa-dri
+    libxkbcommon-x11-0
+    libxcb-xinerama0
+    mesa-utils
     xdotool
   )
   install_available_apt_packages "base" "${base_packages[@]}"
 
   local ros_packages=(
     ros-dev-tools
+    python3-rosdep
     ros-humble-ros-base
     ros-humble-rviz2
     ros-humble-xacro
@@ -329,8 +443,7 @@ check_ubuntu_environment() {
   fi
 
   if [[ -f /opt/ros/humble/setup.bash ]]; then
-    # shellcheck disable=SC1091
-    source /opt/ros/humble/setup.bash
+    source_setup_file /opt/ros/humble/setup.bash
     log OK "ROS2 Humble setup found: /opt/ros/humble/setup.bash"
   else
     log WARN "ROS2 Humble setup is missing: /opt/ros/humble/setup.bash"
@@ -341,11 +454,14 @@ check_ubuntu_environment() {
     if [[ ! -f "$EXISTING_SETUP" ]]; then
       die "Existing setup file does not exist: $EXISTING_SETUP"
     fi
-    # shellcheck disable=SC1090
-    source "$EXISTING_SETUP"
+    source_setup_file "$EXISTING_SETUP"
     log OK "Existing RealMan/ROS workspace underlay sourced: $EXISTING_SETUP"
   else
     suggest_existing_workspaces
+  fi
+  if [[ "$RUN_BUILD" -ne 1 && -f "$WORKSPACE/install/setup.bash" ]]; then
+    source_setup_file "$WORKSPACE/install/setup.bash"
+    log OK "Current workspace setup found: $WORKSPACE/install/setup.bash"
   fi
 
   local required_commands=(python3 ros2 colcon)
@@ -420,6 +536,11 @@ run_project_verify() {
     log WARN "Skipped offline project verification."
     return 0
   fi
+  if [[ ! -d "$REPO_ROOT/docs" ]]; then
+    log WARN "Skipped offline project verification because repo docs are not present at $REPO_ROOT/docs."
+    log WARN "This is expected when only rm65b_dual_arm_ws was copied into the Ubuntu workspace."
+    return 0
+  fi
   if ! have_cmd python3; then
     log WARN "Skipped offline project verification because python3 is missing."
     return 0
@@ -439,16 +560,17 @@ run_build_if_requested() {
   log INFO "Building workspace."
   (
     cd "$WORKSPACE"
-    # shellcheck disable=SC1091
-    source /opt/ros/humble/setup.bash
+    source_setup_file /opt/ros/humble/setup.bash
     if [[ -n "$EXISTING_SETUP" ]]; then
-      # shellcheck disable=SC1090
-      source "$EXISTING_SETUP"
+      source_setup_file "$EXISTING_SETUP"
     fi
-    colcon build --packages-select rm_ros_interfaces
-    # shellcheck disable=SC1091
-    source install/setup.bash
-    colcon build --symlink-install
+    if [[ "$CLEAN_BUILD" -eq 1 ]]; then
+      clean_workspace_build_state
+    fi
+    clean_package_build_state rm_ros_interfaces
+    colcon build --symlink-install --packages-select rm_ros_interfaces
+    source_setup_file install/setup.bash
+    colcon build --symlink-install --packages-skip rm_ros_interfaces
   )
 }
 
@@ -495,12 +617,28 @@ while [[ $# -gt 0 ]]; do
       SKIP_PROJECT_VERIFY=1
       shift
       ;;
+    --setup-apt-sources)
+      SETUP_APT_SOURCES=1
+      shift
+      ;;
     --install-apt-deps)
       INSTALL_APT_DEPS=1
       shift
       ;;
     --build)
       RUN_BUILD=1
+      shift
+      ;;
+    --clean-build)
+      CLEAN_BUILD=1
+      RUN_BUILD=1
+      shift
+      ;;
+    --all)
+      SETUP_APT_SOURCES=1
+      INSTALL_APT_DEPS=1
+      RUN_BUILD=1
+      CLEAN_BUILD=1
       shift
       ;;
     -h|--help)
@@ -525,6 +663,10 @@ fi
 
 mkdir -p "$REPO_ROOT/downloads" "$WORKSPACE/src"
 
+check_workspace_files
+setup_apt_sources_if_requested
+install_apt_deps_if_requested
+
 official_source="$(find_official_source || true)"
 if [[ -z "$official_source" ]]; then
   download_archive
@@ -538,11 +680,13 @@ copy_official_source "$official_source"
 tree_is_valid "$TARGET_DIR" "${official_required[@]}" || die "Official source verification failed under $TARGET_DIR"
 log OK "Official source verification passed."
 
-check_workspace_files
-install_apt_deps_if_requested
 check_ubuntu_environment
 run_project_verify
 run_build_if_requested
 
 log OK "Bootstrap complete."
-log INFO "Next command: cd \"$WORKSPACE\" && source /opt/ros/humble/setup.bash && colcon build --symlink-install"
+if [[ "$RUN_BUILD" -eq 1 ]]; then
+  log INFO "Next command: cd \"$WORKSPACE\" && bash scripts/run_day_visual.sh day01"
+else
+  log INFO "Next command: cd \"$WORKSPACE\" && bash scripts/bootstrap_vmware_ubuntu.sh --build"
+fi

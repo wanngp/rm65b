@@ -14,8 +14,14 @@ latency, repeatability, emergency-stop, video, rosbag, JSON, and CSV evidence.
 ## Environment
 
 - Target runtime: VMware Ubuntu 22.04 with ROS 2 Humble.
+- WSL2 Ubuntu 22.04 may be used for local development checks, but deployment
+  instructions should stay VMware-compatible unless the user asks otherwise.
 - Main bootstrap entrypoint:
   `rm65b_dual_arm_ws/scripts/bootstrap_vmware_ubuntu.sh`.
+- One-command deployment path:
+  `bash scripts/bootstrap_vmware_ubuntu.sh --all`.
+- Quick visualization path after build:
+  `bash scripts/run_day_visual.sh day01`.
 - Windows PowerShell bootstrap is only a host-side helper:
   `rm65b_dual_arm_ws/scripts/bootstrap_official_sources.ps1`.
 - If the official `rm_ros_interfaces` build fails because of a non-ASCII path,
@@ -28,11 +34,18 @@ latency, repeatability, emergency-stop, video, rosbag, JSON, and CSV evidence.
 - Keep the repository root under Git control.
 - Check `git status --short` before and after edits.
 - Keep commits small and scoped to one task.
+- Do not `git add`, `git commit`, or push unless the user asks for Git
+  repository maintenance or committing is clearly part of the current task.
+- Do not commit WSL pid files, logs, build trees, install trees, rosbag files,
+  generated videos, generated screenshots, downloaded archives, or copied
+  official RealMan source.
 - Do not track generated artifacts, build outputs, downloaded archives, rosbags,
   videos, copied delivery bundles, or local collection directories.
 - Update `.gitignore` when new generated directories or large artifacts appear.
 - Do not use destructive Git commands such as `git reset --hard` or
   `git checkout --` unless explicitly requested.
+- Do not manually edit or vendor changes into `rm65b_dual_arm_ws/src/ros2_rm_robot`;
+  it is official third-party source restored by the bootstrap script.
 
 ## Build And Verification
 
@@ -40,13 +53,13 @@ Preferred bootstrap in the VMware guest:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/bootstrap_vmware_ubuntu.sh
+bash scripts/bootstrap_vmware_ubuntu.sh --all
 ```
 
-Install missing apt dependencies only when explicitly requested:
+Use `--build` for incremental rebuilds when dependencies are already installed:
 
 ```bash
-bash scripts/bootstrap_vmware_ubuntu.sh --install-apt-deps
+bash scripts/bootstrap_vmware_ubuntu.sh --build
 ```
 
 Run offline verification when Python dependencies are available:
@@ -55,13 +68,14 @@ Run offline verification when Python dependencies are available:
 python3 scripts/verify_project.py
 ```
 
-Full build sequence:
+Do not manually reproduce the full colcon sequence unless debugging the
+bootstrap script. The script handles ROS setup sourcing, old build-state
+cleanup, `rm_ros_interfaces` staging, and symlink-install consistency.
+
+Quick visual smoke test after build:
 
 ```bash
-source /opt/ros/humble/setup.bash
-colcon build --packages-select rm_ros_interfaces
-source install/setup.bash
-colcon build --symlink-install
+bash scripts/run_day_visual.sh day01
 ```
 
 ## Long-Running Work

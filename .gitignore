@@ -64,11 +64,22 @@ rm65b_dual_arm_ws/src/ros2_rm_robot/
 *.avi
 *.mkv
 *.ppm
+**/rosbags/
+**/rosbag2_*/
+*.bag/
+*.bag2/
+**/camera_frames/
+**/left_camera_frames/
+**/right_camera_frames/
+**/vision_debug_frames/
+**/offline_analysis/
 
 # Logs and generated reports from runs
 *.log
 *.err
 *.out
+*.pid
+*.winpid
 
 # Local accidental or malformed folders
 /

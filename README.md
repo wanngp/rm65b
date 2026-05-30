@@ -25,15 +25,37 @@ RealMan RM65-B dual-arm experiment list.
 
 ## Build on VMware Ubuntu 22.04 / ROS 2 Humble
 
+The commands below assume `~/rm65b_dual_arm_ws` is the ROS workspace directory
+inside Ubuntu. If you cloned or copied the whole Git repository, first enter its
+workspace subdirectory:
+
+```bash
+cd ~/realman_project/rm65b_dual_arm_ws
+```
+
 Run the environment bootstrap inside the Ubuntu VM. It checks the local
 workspace, restores the official RealMan source if missing, can install missing
 apt dependencies, and can build the workspace:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/bootstrap_vmware_ubuntu.sh --install-apt-deps --build
+bash scripts/bootstrap_vmware_ubuntu.sh --all
 source install/setup.bash
 ```
+
+`--all` is the beginner-friendly deployment path: it configures official ROS2
+and Gazebo apt sources, installs available dependencies, downloads or reuses the
+official RealMan source, cleans old build artifacts, and builds the workspace.
+It expects Ubuntu 22.04 with sudo access and network access. The dependency
+baseline is ROS 2 Humble, MoveIt2, RViz2, Gazebo Harmonic, ros_gz, colcon,
+PyYAML, NumPy, OpenCV, ffmpeg, CMake, and GCC/G++.
+
+Official references:
+
+- ROS 2 Humble Ubuntu deb packages:
+  <https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html>
+- Gazebo Harmonic Ubuntu binaries:
+  <https://gazebosim.org/docs/harmonic/install_ubuntu/>
 
 If the VM already has RealMan packages built in another workspace, pass that
 workspace as an underlay instead of downloading everything again:
@@ -47,13 +69,21 @@ bash scripts/bootstrap_vmware_ubuntu.sh \
 
 See `rm65b_dual_arm_ws/README.md` for Day 01 and five-day recording commands.
 
+For a quick visual check after bootstrap:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day_visual.sh day01
+```
+
 ## Simulation-safe launch
 
 Start the offline/simulation-safe experiment stack:
 
 ```bash
+cd ~/rm65b_dual_arm_ws
 source /opt/ros/humble/setup.bash
-source rm65b_dual_arm_ws/install/setup.bash
+source install/setup.bash
 ros2 launch rm65b_dual_arm_bringup full_system.launch.py use_hardware:=false
 ```
 
