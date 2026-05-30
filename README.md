@@ -1,14 +1,14 @@
 # RM65-B dual-arm weaving experiment workspace
 
-This directory contains the engineering deliverables for the five-day
+This repository contains the engineering deliverables for the five-day
 RealMan RM65-B dual-arm experiment list.
 
 ## What is included
 
-- `downloads/ros2_rm_robot_humble.zip`: downloaded official RealMan
+- Bootstrap scripts that download or reuse the official RealMan
   `ros2_rm_robot` Humble package.
-- `rm65b_dual_arm_ws/src/ros2_rm_robot`: extracted official source copied
-  into the ROS 2 workspace.
+- `rm65b_dual_arm_ws/src/ros2_rm_robot`: ignored third-party source location
+  restored by the bootstrap scripts.
 - `rm65b_dual_arm_ws/src/rm65b_*`: experiment packages for gripper control,
   static TF/TCP configuration, safety supervision, vision guidance, and
   weaving primitives.
@@ -23,41 +23,42 @@ RealMan RM65-B dual-arm experiment list.
 - If the physical arm has a six-axis force sensor, use the official
   `rm_65_6f` or `rm_65_6fb` launch family during site validation.
 
-## Build on Ubuntu 22.04 / ROS 2 Humble
+## Build on VMware Ubuntu 22.04 / ROS 2 Humble
 
-Do not run apt installation while another WSL task is using package manager
-locks. After ROS 2 Humble and MoveIt2 are already installed:
+Run the environment bootstrap inside the Ubuntu VM. It checks the local
+workspace, restores the official RealMan source if missing, can install missing
+apt dependencies, and can build the workspace:
 
 ```bash
-cd /mnt/e/1-项目/睿尔曼/rm65b_dual_arm_ws
-source /opt/ros/humble/setup.bash
-colcon build --packages-select rm_ros_interfaces
-source install/setup.bash
-colcon build
+cd ~/rm65b_dual_arm_ws
+bash scripts/bootstrap_vmware_ubuntu.sh --install-apt-deps --build
 source install/setup.bash
 ```
 
-If official `rm_ros_interfaces` fails with a truncated path such as
-`/mnt/e/1-`, copy the workspace to an ASCII-only path first:
+If the VM already has RealMan packages built in another workspace, pass that
+workspace as an underlay instead of downloading everything again:
 
 ```bash
-mkdir -p /tmp/rm65b_dual_arm_ws/src
-cp -a /mnt/e/1-项目/睿尔曼/rm65b_dual_arm_ws/src/. /tmp/rm65b_dual_arm_ws/src/
-cd /tmp/rm65b_dual_arm_ws
-source /opt/ros/humble/setup.bash
-colcon build --symlink-install --packages-select rm_ros_interfaces rm_driver
-source install/setup.bash
-colcon build --symlink-install --packages-select rm65b_dual_arm_bringup rm65b_gripper_control rm65b_safety rm65b_vision_guidance rm65b_weaving_primitives
+bash scripts/bootstrap_vmware_ubuntu.sh \
+  --official-source-dir ~/old_ros2_ws/src/ros2_rm_robot \
+  --existing-setup ~/old_ros2_ws/install/setup.bash \
+  --build
 ```
+
+See `rm65b_dual_arm_ws/README.md` for Day 01 and five-day recording commands.
+
+## Simulation-safe launch
 
 Start the offline/simulation-safe experiment stack:
 
 ```bash
+source /opt/ros/humble/setup.bash
+source rm65b_dual_arm_ws/install/setup.bash
 ros2 launch rm65b_dual_arm_bringup full_system.launch.py use_hardware:=false
 ```
 
 Start with physical RM65-B drivers only after IPs, TCPs, grippers, sensors,
-and emergency stop have been checked:
+joint limits, and emergency stop have been checked:
 
 ```bash
 ros2 launch rm65b_dual_arm_bringup full_system.launch.py use_hardware:=true

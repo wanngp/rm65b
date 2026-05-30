@@ -272,10 +272,14 @@ install_apt_deps_if_requested() {
     gnupg
     lsb-release
     python3-colcon-common-extensions
+    python3-numpy
+    python3-opencv
     python3-pip
     python3-yaml
     unzip
     wget
+    x11-utils
+    xdotool
   )
   install_available_apt_packages "base" "${base_packages[@]}"
 
@@ -289,6 +293,7 @@ install_apt_deps_if_requested() {
     ros-humble-joint-state-publisher-gui
     ros-humble-tf2-tools
     ros-humble-control-msgs
+    ros-humble-behaviortree-cpp-v3
     ros-humble-ros2-control
     ros-humble-ros2-controllers
     ros-humble-moveit
@@ -306,6 +311,7 @@ install_apt_deps_if_requested() {
     gz-tools2
     libgz-sim8-dev
     libsdformat14-dev
+    libyaml-cpp-dev
   )
   install_available_apt_packages "Gazebo Harmonic" "${gazebo_packages[@]}"
 
@@ -343,7 +349,7 @@ check_ubuntu_environment() {
   fi
 
   local required_commands=(python3 ros2 colcon)
-  local optional_commands=(git cmake unzip curl wget gz ffmpeg)
+  local optional_commands=(git cmake unzip curl wget gz ffmpeg xdotool xwininfo)
   local cmd
   for cmd in "${required_commands[@]}"; do
     if have_cmd "$cmd"; then
@@ -369,6 +375,22 @@ PY
     else
       log WARN "python3 PyYAML is missing; install python3-yaml."
     fi
+    if python3 - <<'PY' >/dev/null 2>&1
+import numpy
+PY
+    then
+      log OK "python3 NumPy is available."
+    else
+      log WARN "python3 NumPy is missing; install python3-numpy."
+    fi
+    if python3 - <<'PY' >/dev/null 2>&1
+import cv2
+PY
+    then
+      log OK "python3 OpenCV is available."
+    else
+      log WARN "python3 OpenCV is missing; install python3-opencv for D3 vision checks."
+    fi
   fi
 
   if have_cmd ros2; then
@@ -387,6 +409,9 @@ PY
     ros2 pkg prefix ros_gz_bridge >/dev/null 2>&1 \
       && log OK "ros_gz_bridge is available." \
       || log WARN "ros_gz_bridge is missing."
+    ros2 pkg prefix behaviortree_cpp_v3 >/dev/null 2>&1 \
+      && log OK "BehaviorTree.CPP v3 package is available." \
+      || log WARN "BehaviorTree.CPP v3 package is missing."
   fi
 }
 
