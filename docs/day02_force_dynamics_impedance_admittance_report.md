@@ -15,6 +15,19 @@ Day 2 用于展示右臂末端夹具在 Gazebo 中具备明确的重力、质量
 | 机械臂碰固体后的受力变化 | 右臂末端接触 `d2_force_target_panel`/`d2_contact_pad` | `/right_rm_driver/rm_driver/udp_six_force`、`/force_control/gazebo_contact_force_state` |
 | 机械臂受到力后的运动 | 右臂在导纳修正后产生额外关节响应 | `/force_control/admittance_offset`、`/force_control/corrected_right_joint_states`、`/joint_states` |
 
+### 1.1 Gazebo 画面怎么读
+
+Day 2 的场景可以按一个简单抽象理解：右臂做“按压弹性垫”的力控实验。
+
+| 画面物体 | 含义 |
+| --- | --- |
+| 黑色竖板 `d2_force_target_panel` | 刚性墙/固定工装，是被按压的背景结构 |
+| 蓝色方块 `d2_contact_pad` | 真正希望右臂接触的力控垫，带 Gazebo contact sensor |
+| 黄色小方块 `d2_contact_target_center` | 接触垫中心点，帮助判断末端是否对准 |
+| 黄色箭头 `d2_press_arrow_*` | 右臂应沿这个方向压向接触垫 |
+| 右侧小刻度 `d2_compliance_gauge_*` | 抽象表示导纳/柔顺修正，不是实物传感器 |
+| 黄色探针 `d2_force_contact_probe` | Gazebo 动态接触体，用于触发接触力反馈 |
+
 ## 2. Gazebo 重力和转动惯量配置
 
 D2 启动时，`scripts/play_harmonic_planned_record.sh` 会把 RM65-B URDF 转换为 Gazebo SDF，并对 D2 单独启用动力学配置：
@@ -25,7 +38,7 @@ D2 启动时，`scripts/play_harmonic_planned_record.sh` 会把 RM65-B URDF 转�
 | 夹爪掌部 | 使用辨识后的 palm/flange 聚合质量和惯量 |
 | 上/下手指 | 使用 finger/hook 聚合质量和惯量 |
 | 力控探针 | `d2_force_probe_tip` 固定在右夹爪掌部前方 `0.135 m` |
-| 固体目标 | `d2_force_target_panel` 与 `d2_contact_pad` 带 Gazebo contact sensor |
+| 固体目标 | 黑色 `d2_force_target_panel` 和蓝色 `d2_contact_pad` 带 Gazebo contact sensor |
 
 关键文件：
 
@@ -33,7 +46,7 @@ D2 启动时，`scripts/play_harmonic_planned_record.sh` 会把 RM65-B URDF 转�
 | --- | --- |
 | `rm65b_dual_arm_ws/scripts/play_harmonic_planned_record.sh` | 生成 D2 Gazebo SDF，写入 gravity 和惯量 |
 | `rm65b_dual_arm_ws/src/rm65b_dual_arm_planning/config/d2_end_effector_dynamics.yaml` | 夹具辨识参数和控制参数 |
-| `rm65b_dual_arm_ws/scripts/generate_day_world.py` | 生成 D2 固体目标板、接触垫、接触探针 |
+| `rm65b_dual_arm_ws/scripts/generate_day_world.py` | 生成 D2 按压墙、接触垫、方向箭头、柔顺刻度和接触探针 |
 
 ## 3. 末端夹具动力学辨识
 
@@ -160,6 +173,17 @@ python3 scripts/d2_impedance_admittance_calculation.py \
 
 ### 5.1 启动命令
 
+只想先看懂画面时，优先运行这个 live 可视化脚本：
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day02_force_visual.sh 180
+```
+
+它会循环演示右臂靠近蓝色接触垫、按压、退出；夹爪在整个 Day2 接触任务中保持闭合。这个脚本用于快速观察 Day2 任务，不替代正式 evidence 录制。
+
+正式证据录制命令如下：
+
 ```bash
 cd /mnt/e/1-项目/睿尔曼/rm65b_dual_arm_ws
 source /opt/ros/humble/setup.bash
@@ -183,7 +207,7 @@ bash scripts/play_harmonic_planned_record.sh "$OUT" "$PWD" "$DOMAIN" "$DAY"
 
 | 窗口 | 内容 |
 | --- | --- |
-| Gazebo | 右臂末端、夹爪、`d2_force_target_panel`、`d2_contact_pad` |
+| Gazebo | 右臂末端、夹爪、黑色目标墙、蓝色接触垫、黄色按压方向箭头 |
 | RViz | 双臂 RobotModel，右臂关节运动 |
 | 终端 1 | `/right_rm_driver/rm_driver/udp_six_force` |
 | 终端 2 | `/force_control/state` 和 `/force_control/impedance_state` |
@@ -204,7 +228,7 @@ ros2 topic echo /joint_states
 
 | 编号 | 视频要求 | 判定标准 |
 | --- | --- | --- |
-| 1 | 右臂末端碰到固体目标 | Gazebo 中末端/探针靠近并接触目标板或接触垫 |
+| 1 | 右臂末端碰到固体目标 | Gazebo 中末端/探针沿黄色箭头靠近并接触蓝色接触垫 |
 | 2 | 碰撞后受力 topic 变化 | `/right_rm_driver/rm_driver/udp_six_force.force_fz` 和 `/force_control/gazebo_contact_force_state` 有变化 |
 | 3 | 受力后机械臂产生运动 | `/force_control/admittance_offset` 非零，`/force_control/corrected_right_joint_states` 有变化 |
 | 4 | RViz 显示良好 | 双臂 RobotModel 不空白，右臂运动与 Gazebo 大体一致 |

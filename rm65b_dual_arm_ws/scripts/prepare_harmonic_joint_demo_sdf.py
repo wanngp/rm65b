@@ -9,6 +9,7 @@ from pathlib import Path
 INITIAL_POSITIONS = (0.0, -0.35, 0.65, 0.0, 0.90, 0.0)
 TOOL_COLOR = "0.16 0.22 0.28 1"
 FINGER_COLOR = "0.05 0.06 0.07 1"
+PROBE_COLOR = "0.95 0.82 0.18 1"
 
 
 def text(parent: ET.Element, tag: str, value: str) -> ET.Element:
@@ -79,8 +80,8 @@ def add_gripper(model: ET.Element) -> None:
     add_box_visual(palm, "palm", "0.030 0 0 0 0 0", "0.040 0.026 0.018", TOOL_COLOR)
 
     for name, y in (
-        ("attached_scaled_gripper_upper_finger", 0.018),
-        ("attached_scaled_gripper_lower_finger", -0.018),
+        ("attached_scaled_gripper_upper_finger", 0.006),
+        ("attached_scaled_gripper_lower_finger", -0.006),
     ):
         finger = ET.SubElement(model, "link", {"name": name})
         text(finger, "pose", f"0.070 {y:.3f} 0 0 0 0").set("relative_to", "attached_scaled_gripper_palm")
@@ -115,6 +116,23 @@ def add_gripper(model: ET.Element) -> None:
     add_position_controller(model, "gripper_lower_slide", "/rm65b_gripper/lower_finger_cmd")
 
 
+def add_force_probe(model: ET.Element) -> None:
+    if model.find("link[@name='attached_scaled_gripper_palm']") is None:
+        return
+    if model.find("link[@name='d2_force_probe_tip']") is not None:
+        return
+
+    probe = ET.SubElement(model, "link", {"name": "d2_force_probe_tip"})
+    text(probe, "pose", "0.135 0 0 0 0 0").set("relative_to", "attached_scaled_gripper_palm")
+    text(probe, "gravity", "false")
+    add_inertial(probe, "0.035")
+    add_box_visual(probe, "probe_tip", "0 0 0 0 0 0", "0.032 0.032 0.032", PROBE_COLOR)
+
+    fixed = ET.SubElement(model, "joint", {"name": "d2_force_probe_tip_fixed", "type": "fixed"})
+    text(fixed, "parent", "attached_scaled_gripper_palm")
+    text(fixed, "child", "d2_force_probe_tip")
+
+
 def add_joint_trajectory_controller(model: ET.Element) -> None:
     plugin = ET.SubElement(
         model,
@@ -136,7 +154,7 @@ def add_joint_trajectory_controller(model: ET.Element) -> None:
         text(plugin, "position_cmd_max", "80")
 
 
-def prepare(src: Path, dst: Path) -> None:
+def prepare(src: Path, dst: Path, force_probe: bool = False) -> None:
     tree = ET.parse(src)
     root = tree.getroot()
     model = root.find("model")
@@ -164,16 +182,19 @@ def prepare(src: Path, dst: Path) -> None:
     model.insert(1, world_joint)
 
     add_gripper(model)
+    if force_probe:
+        add_force_probe(model)
     add_joint_trajectory_controller(model)
-    tree.write(dst, encoding="unicode", xml_declaration=True)
+    tree.write(dst, encoding="utf-8", xml_declaration=True)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--force-probe", action="store_true")
     args = parser.parse_args()
-    prepare(Path(args.source), Path(args.output))
+    prepare(Path(args.source), Path(args.output), force_probe=args.force_probe)
     return 0
 
 

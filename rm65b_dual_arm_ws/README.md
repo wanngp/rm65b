@@ -123,6 +123,29 @@ cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day01
 ```
 
+To inspect the Day 02 force-compliance scene with an obvious live motion:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day02_force_visual.sh 180
+```
+
+This is the fastest way to understand Day 02 visually. It opens Gazebo with the
+Day 02 press-wall scene and repeatedly moves the right arm toward the blue pad,
+presses, releases, and keeps the gripper closed during the contact task.
+
+For the fuller evidence/recording path, use:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day_visual.sh day02
+```
+
+Day 02 is a simple press-wall task: the right arm presses the blue contact pad
+mounted on a black target wall. The yellow arrow shows the intended press
+direction, and the side gauge is only a visual cue for admittance/compliance
+response.
+
 For a quick live-only MVP with no recording, use the joint sweep demo. It opens
 Gazebo, moves both arms through a large joint-space reciprocating trajectory,
 and toggles the grippers open/closed:

@@ -23,7 +23,7 @@ Day 1 不再展示物块夹取放置，改为验证四项基础能力：
 | --- | --- | --- |
 | 1 | Gazebo 整体视角，左右臂和夹爪可见 | D1 是夹爪、TF、碰撞矩阵和双臂运动能力验证 |
 | 2 | 拉近夹爪，展示打开状态 | 打开命令为 `0.018 m` |
-| 3 | 夹爪闭合，展示闭合状态 | 闭合命令为 `0.004 m` |
+| 3 | 夹爪闭合，展示闭合状态 | 闭合命令为 `0.000 m` |
 | 4 | RViz 显示双臂 RobotModel 和 TF | 夹爪固定安装在 `Link6` 后方，转移矩阵写在报告中 |
 | 5 | 双臂同时运动 | 对应 `d1_sync_spread_both_arms`、`d1_sync_shift_both_arms` |
 | 6 | 左臂动右臂保持、右臂动左臂保持 | 对应 `d1_alternate_left_moves_right_holds`、`d1_alternate_right_moves_left_holds` |
@@ -36,8 +36,8 @@ Gazebo 中的夹爪由录制启动脚本在 RM65-B SDF 上动态补入，配置�
 | --- | --- | --- |
 | 夹爪掌部 link | `attached_scaled_gripper_palm` | 固定到机械臂 `Link6` |
 | 掌部相对 `Link6` 位姿 | `0.018 0 0 0 0 0` | 夹爪基准坐标系前移 18 mm |
-| 上指 link | `attached_scaled_gripper_upper_finger` | 相对掌部初始 `0.070 0.018 0` |
-| 下指 link | `attached_scaled_gripper_lower_finger` | 相对掌部初始 `0.070 -0.018 0` |
+| 上指 link | `attached_scaled_gripper_upper_finger` | 相对掌部闭合基准 `0.070 0.006 0` |
+| 下指 link | `attached_scaled_gripper_lower_finger` | 相对掌部闭合基准 `0.070 -0.006 0` |
 | 上指关节 | `gripper_upper_slide` | prismatic，轴向 `0 1 0` |
 | 下指关节 | `gripper_lower_slide` | prismatic，轴向 `0 -1 0` |
 | 行程范围 | `[0.000, 0.018] m` | 控制夹爪开合 |
@@ -49,7 +49,7 @@ D1 录制中，`scripts/physical_interaction_controller.py` 只做夹爪命令�
 | 状态 | 命令值 | 日志关键词 |
 | --- | --- | --- |
 | 打开 | `0.018 m` | `d1_gripper_open_both`、`d1_gripper_final_open` |
-| 闭合 | `0.004 m` | `d1_gripper_close_both`、`d1_gripper_close_during_dual_motion` |
+| 闭合 | `0.000 m` | `d1_gripper_close_both`、`d1_gripper_close_during_dual_motion` |
 
 ## 4. 夹爪和机械臂末端相对位置怎么求
 

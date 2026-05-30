@@ -233,7 +233,7 @@ if model.find("link[@name='Link6']") is not None:
         add_inertial(gripper)
     add_box_visual(gripper, "flange_adapter", "0 0 0 0 0 0", "0.038 0.038 0.012", tool_color, True)
     add_box_visual(gripper, "palm", "0.030 0 0 0 0 0", "0.040 0.026 0.018", tool_color, True)
-    for name, y in (("attached_scaled_gripper_upper_finger", 0.018), ("attached_scaled_gripper_lower_finger", -0.018)):
+    for name, y in (("attached_scaled_gripper_upper_finger", 0.006), ("attached_scaled_gripper_lower_finger", -0.006)):
         finger = ET.SubElement(model, "link", {"name": name})
         ET.SubElement(finger, "pose", {"relative_to": "attached_scaled_gripper_palm"}).text = f"0.070 {y:.3f} 0 0 0 0"
         ET.SubElement(finger, "gravity").text = "true" if enable_d2_dynamics else "false"
@@ -784,14 +784,18 @@ PIDS+=("$!")
 GRIPPER_TARGET_FILE="$OUT_DIR/logs/gripper_target_position.txt"
 GRIPPER_STOP_FILE="$OUT_DIR/logs/stop_gripper_command_stream"
 rm -f "$GRIPPER_STOP_FILE"
-printf "0.018\n" > "$GRIPPER_TARGET_FILE"
+if [[ "$DAY_NORM" == "day02" ]]; then
+  printf "0.000\n" > "$GRIPPER_TARGET_FILE"
+else
+  printf "0.018\n" > "$GRIPPER_TARGET_FILE"
+fi
 gripper_command_stream() {
   while [ ! -f "$GRIPPER_STOP_FILE" ]; do
     local position
     position="$(cat "$GRIPPER_TARGET_FILE" 2>/dev/null || printf "0.018")"
     timeout 1.0s ros2 topic pub --once /rm65b_gripper/upper_finger_cmd std_msgs/msg/Float64 "{data: $position}" >/dev/null 2>&1 || true
     timeout 1.0s ros2 topic pub --once /rm65b_gripper/lower_finger_cmd std_msgs/msg/Float64 "{data: $position}" >/dev/null 2>&1 || true
-    sleep 0.8
+    sleep 0.25
   done
 }
 gripper_command_stream > "$OUT_DIR/logs/ros_gripper_command_stream.log" 2>&1 &
@@ -1228,7 +1232,11 @@ PY
 }
 
 prepare_moveit_physical_scene() {
-  send_gripper_position 0.018
+  if [[ "$DAY_NORM" == "day02" ]]; then
+    send_gripper_position 0.000
+  else
+    send_gripper_position 0.018
+  fi
   case "$DAY_NORM" in
     day01)
       sleep 1

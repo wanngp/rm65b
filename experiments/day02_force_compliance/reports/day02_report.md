@@ -16,8 +16,10 @@
 ## Simulation evidence
 
 - Final Harmonic output: `outputs/rm65b_gazebo_camera_force_loop_days_harmonic_20260527_2245/day02`
-- Gazebo environment: D2-specific force-compliance station with contact bars,
-  spring markers, and force target panel.
+- Gazebo environment: simplified press-wall scene. The black target wall is
+  the fixed fixture, the blue pad is the intended contact surface, the yellow
+  arrow shows the right-arm press direction, and the side gauge represents
+  admittance/compliance response.
 - MoveIt2 stage: `force_pull_tight`, true `dual_arms` group, 3 playback
   points, `error_code: 1`.
 - Videos: `videos/day02_moveit_harmonic_playback.mp4` and

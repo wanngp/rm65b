@@ -120,7 +120,7 @@ class MoveItPlanJointStateReplay(Node):
             "transfer",
         )
         closed = any(keyword in phase for keyword in close_keywords)
-        position = 0.004 if closed else 0.018
+        position = 0.000 if closed else 0.018
         for pub, name in (
             (self.left_gripper_pub, "left_finger_joint"),
             (self.right_gripper_pub, "right_finger_joint"),

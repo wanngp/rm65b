@@ -55,12 +55,15 @@ Gazebo 世界坐标单位为米，角度为弧度。
 
 | 项目 | 世界坐标 |
 | --- | --- |
-| 力控目标板 `d2_force_target_panel` | `(0.542, -0.060, 0.760)` |
-| 接触垫 `d2_contact_pad` | `(0.542, -0.130, 0.760)` |
-| 动态接触探针 `d2_force_contact_probe` | `(0.542, -0.235, 0.760)` |
+| 力控目标板 `d2_force_target_panel` | `(0.620, -0.220, 0.760)` |
+| 接触垫 `d2_contact_pad` | `(0.620, -0.155, 0.760)` |
+| 接触中心标记 `d2_contact_target_center` | `(0.620, -0.121, 0.760)` |
+| 按压方向箭头 `d2_press_arrow_shaft` | `(0.620, 0.010, 1.025)` |
+| 柔顺响应刻度 `d2_compliance_gauge_rail` | `(0.800, -0.155, 0.760)` |
+| 动态接触探针 `d2_force_contact_probe` | `(0.620, -0.300, 0.760)` |
 | 右臂 `d2_force_press` TCP | `(0.556, -0.099, 0.695)` |
 
-结论：D2 是右臂动力学和力控接触实验。录制时必须同时展示 Gazebo 固体接触、受力 topic、导纳/阻抗状态、关节位置 topic。D2 报告见 `docs/day02_force_dynamics_impedance_admittance_report.md`。
+结论：D2 是右臂动力学和力控接触实验，可以简单讲成“右臂沿黄色箭头按压蓝色接触垫”。黑色 `d2_force_target_panel` 是刚性墙/固定工装，蓝色 `d2_contact_pad` 是接触面，右侧刻度只表示导纳/柔顺响应。录制时必须同时展示 Gazebo 固体接触、受力 topic、导纳/阻抗状态、关节位置 topic。D2 报告见 `docs/day02_force_dynamics_impedance_admittance_report.md`。
 
 ### Day 3 手眼标定、OpenCV 识别和视觉伺服
 
@@ -264,7 +267,7 @@ bash scripts/play_harmonic_planned_record.sh "$OUT" "$PWD" "$DOMAIN" "$DAY"
 
 1. 打开 `gz sim -g` 后，先给整体视角：左右机械臂、左右运动参考线、中心安全间隔柱、夹爪开合标尺都在画面中。
 2. 拉近左/右夹爪，先展示开合标尺附近的打开状态。
-3. 动作开始后，脚本会把夹爪从打开 `0.018 m` 切到闭合 `0.004 m`，录屏中必须能看出开和合两个状态。
+3. 动作开始后，脚本会把夹爪从打开 `0.018 m` 切到闭合 `0.000 m`，录屏中必须能看出开和合两个状态。
 4. 继续保持整体视角，观察两臂同时向外/向目标位运动，这是同步运动能力。
 5. 后半段观察“左臂动、右臂保持”和“右臂动、左臂保持”，这是交替运动能力。
 6. 全程不要拖动物体，D1 场景中不再有取放物块。
@@ -324,6 +327,15 @@ ros2 topic echo /rm65b_gripper/lower_finger_cmd
 
 ### 启动当天动作
 
+先看懂 Day2 动作时，运行这个 live 可视化脚本：
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day02_force_visual.sh 180
+```
+
+它会让右臂反复靠近、按压、退出蓝色接触垫，并让夹爪全程保持闭合，适合现场先确认“这个实验到底在干什么”。确认画面后，再用下面的正式录制流程。
+
 ```bash
 DAY=day02
 DOMAIN=212
@@ -347,7 +359,7 @@ bash scripts/play_harmonic_planned_record.sh "$OUT" "$PWD" "$DOMAIN" "$DAY"
 ### Gazebo 操作
 
 1. 先给整体视角，说明右臂靠近力控工位。
-2. 拉近 `d2_force_target_panel` 和 `d2_contact_pad`，让老师看清目标板位置。
+2. 拉近黑色 `d2_force_target_panel`、蓝色 `d2_contact_pad` 和黄色箭头，让老师看清“右臂按压接触垫”的关系。
 3. 动作开始后，视角跟随右臂末端，不要拍成远处空跑。
 4. 接触阶段保持目标板、接触垫、右夹具末端同时在画面里。
 5. 受力后继续看右臂末端，说明导纳控制把力误差转换成关节修正运动。
@@ -627,7 +639,7 @@ bash scripts/play_harmonic_planned_record.sh "$OUT" "$PWD" "$DOMAIN" "$DAY"
 
 1. 先给整体视角：视觉板、力控板、编织/纱线区域都在同一个场景中。
 2. 第一段看视觉区域：左臂和 `d3_marker_center`、`vision_target`。
-3. 第二段看力控区域：右臂和 `d2_force_target_panel`、`d2_contact_pad`。
+3. 第二段看力控区域：右臂、黑色目标墙、蓝色接触垫和黄色按压方向箭头。
 4. 第三段看编织区域：右臂和 `weft_yarn`、`d4_shuttle_lane`、`d4_tension_scale`。
 5. 最后给整体视角，说明这是集成链路，不是单一动作。
 

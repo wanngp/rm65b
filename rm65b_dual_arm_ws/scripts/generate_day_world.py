@@ -12,8 +12,8 @@ DAY_NOTES = {
         "Includes offset TCP reference markers and compact gripper calibration markers.",
     ],
     "day02": [
-        "D2 force-compliance scene.",
-        "Includes contact bars, compliance spring marker, and force target panel.",
+        "D2 force-compliance press-wall scene.",
+        "Right arm presses the blue contact pad; the yellow arrow shows force input and the side gauge shows admittance response.",
     ],
     "day03": [
         "D3 vision-guidance scene.",
@@ -238,13 +238,22 @@ def add_day01(world: ET.Element) -> None:
 
 
 def add_day02(world: ET.Element) -> None:
-    add_box_model(world, "d2_force_target_panel", "0.542 -0.060 0.760 0 0 0", "0.32 0.070 0.36", "0.15 0.18 0.22 1", True, True)
-    add_box_model(world, "d2_contact_pad", "0.542 -0.130 0.760 0 0 0", "0.22 0.090 0.22", "0.12 0.52 0.74 1", True, True)
-    add_box_model(world, "d2_left_compliance_bar", "0.452 -0.130 0.760 0 0 0", "0.045 0.060 0.34", "0.10 0.60 0.24 1", True, True)
-    add_box_model(world, "d2_right_compliance_bar", "0.632 -0.130 0.760 0 0 0", "0.045 0.060 0.34", "0.88 0.48 0.12 1", True, True)
-    add_contact_probe(world, "d2_force_contact_probe", "0.542 -0.235 0.760 0 0 0", "0.080 0.045 0.080")
-    for idx, x in enumerate([0.472, 0.507, 0.542, 0.577, 0.612]):
-        add_box_model(world, f"d2_spring_coil_{idx}", f"{x:.3f} -0.180 0.940 0 0 0", "0.024 0.036 0.024", "0.18 0.52 0.95 1")
+    add_box_model(world, "d2_workcell_floor_zone", "0.620 -0.175 0.506 0 0 0", "0.54 0.42 0.012", "0.42 0.45 0.47 0.58")
+    add_box_model(world, "d2_force_target_panel", "0.620 -0.220 0.760 0 0 0", "0.36 0.070 0.40", "0.14 0.16 0.18 1", True, True)
+    add_box_model(world, "d2_contact_pad", "0.620 -0.155 0.760 0 0 0", "0.24 0.055 0.24", "0.05 0.58 0.82 1", True, True)
+    add_box_model(world, "d2_contact_target_center", "0.620 -0.121 0.760 0 0 0", "0.060 0.010 0.060", "0.98 0.88 0.12 1")
+    add_box_model(world, "d2_press_arrow_shaft", "0.620 0.010 1.025 0 0 0", "0.026 0.220 0.026", "1.00 0.78 0.12 1")
+    add_box_model(world, "d2_press_arrow_head", "0.620 -0.115 1.025 0 0 0", "0.090 0.052 0.052", "1.00 0.60 0.08 1")
+    add_box_model(world, "d2_compliance_gauge_rail", "0.800 -0.155 0.760 0 0 0", "0.018 0.240 0.018", "0.88 0.88 0.82 1")
+    for idx, (y, color) in enumerate(
+        [
+            (-0.245, "0.10 0.70 0.28 1"),
+            (-0.155, "0.95 0.72 0.16 1"),
+            (-0.065, "0.85 0.18 0.12 1"),
+        ]
+    ):
+        add_box_model(world, f"d2_compliance_gauge_tick_{idx}", f"0.800 {y:.3f} 0.795 0 0 0", "0.060 0.010 0.030", color)
+    add_contact_probe(world, "d2_force_contact_probe", "0.620 -0.300 0.760 0 0 0", "0.075 0.040 0.075", "0.98 0.86 0.18 1")
 
 
 def add_day03(world: ET.Element) -> None:
@@ -355,7 +364,7 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     if hasattr(ET, "indent"):
         ET.indent(tree, space="  ")
-    tree.write(output, encoding="unicode", xml_declaration=True)
+    tree.write(output, encoding="utf-8", xml_declaration=True)
 
     notes = Path(args.notes)
     notes.parent.mkdir(parents=True, exist_ok=True)
