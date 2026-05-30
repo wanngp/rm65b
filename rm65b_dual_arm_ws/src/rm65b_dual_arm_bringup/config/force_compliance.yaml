@@ -1,0 +1,20 @@
+force_control:
+  official_topics:
+    left_set_force_position: /left_rm_driver/rm_driver/set_force_postion_cmd
+    right_set_force_position: /right_rm_driver/rm_driver/set_force_postion_cmd
+    left_stop_force_position: /left_rm_driver/rm_driver/stop_force_postion_cmd
+    right_stop_force_position: /right_rm_driver/rm_driver/stop_force_postion_cmd
+    left_udp_six_force: /left_rm_driver/rm_driver/udp_six_force
+    right_udp_six_force: /right_rm_driver/rm_driver/udp_six_force
+  admittance:
+    translational_stiffness_n_per_m: [450.0, 450.0, 300.0]
+    rotational_stiffness_nm_per_rad: [8.0, 8.0, 6.0]
+    damping_ratio: [0.9, 0.9, 1.0, 0.8, 0.8, 0.8]
+    max_compliance_offset_m: 0.015
+  yarn_force_thresholds_n:
+    cotton_min: 1.2
+    cotton_max: 3.0
+    wool_min: 0.8
+    wool_max: 2.2
+    synthetic_min: 1.5
+    synthetic_max: 3.5

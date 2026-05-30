@@ -1,0 +1,12 @@
+safety:
+  watchdog_timeout_s: 0.5
+  max_force_n: 35.0
+  max_torque_nm: 4.0
+  stop_topics:
+    - /left_rm_driver/rm_driver/move_stop_cmd
+    - /right_rm_driver/rm_driver/move_stop_cmd
+  joint_limit_names_csv: "left_joint1,left_joint2,left_joint3,left_joint4,left_joint5,left_joint6,right_joint1,right_joint2,right_joint3,right_joint4,right_joint5,right_joint6"
+  joint_limit_low_csv: "-3.05,-2.45,-2.80,-3.05,-2.45,-6.20,-3.05,-2.45,-2.80,-3.05,-2.45,-6.20"
+  joint_limit_high_csv: "3.05,2.45,2.80,3.05,2.45,6.20,3.05,2.45,2.80,3.05,2.45,6.20"
+  reduced_speed_scale: 0.2
+  reset_requires_operator_ack: true

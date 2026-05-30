@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RM65-B 双臂实验验收播放</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #5d6d7e;
+      --line: #d6dbdf;
+      --bg: #f7f9fa;
+      --accent: #0b6e4f;
+      --warn: #9a5b00;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+    header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--line);
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    h1 { margin: 0; font-size: 22px; font-weight: 650; }
+    main { max-width: 980px; margin: 0 auto; padding: 28px; }
+    .slide {
+      display: none;
+      min-height: 520px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 28px;
+    }
+    .slide.active { display: block; }
+    h2 { margin: 0 0 14px; font-size: 28px; }
+    p { line-height: 1.65; }
+    ul { line-height: 1.8; padding-left: 22px; }
+    code {
+      background: #eef3f5;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-family: Consolas, monospace;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #e8f5ef;
+      color: var(--accent);
+      font-weight: 650;
+      font-size: 13px;
+    }
+    .pending {
+      background: #fff3d9;
+      color: var(--warn);
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 18px;
+    }
+    button {
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--ink);
+      padding: 9px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    .progress {
+      flex: 1;
+      height: 8px;
+      background: #e5e8ea;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width .2s ease;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .tile {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      background: #fbfcfc;
+    }
+    .tile strong { display: block; margin-bottom: 8px; }
+    footer {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>RM65-B 双臂实验验收播放</h1>
+    <span id="counter">1 / 8</span>
+  </header>
+  <main>
+    <section class="slide active">
+      <h2>总览</h2>
+      <span class="status">离线工程完成</span>
+      <p>本工程面向睿尔曼 RM65-B 标准 6 轴协作机械臂，已生成 ROS2 Humble 工作空间、官方驱动源码、自研实验包、Day1-Day5 验收资料和验证报告。</p>
+      <div class="grid">
+        <div class="tile"><strong>工作空间</strong><code>rm65b_dual_arm_ws</code></div>
+        <div class="tile"><strong>官方包</strong><code>ros2_rm_robot</code> Humble</div>
+        <div class="tile"><strong>默认型号</strong><code>RM_65</code> / <code>rm_65</code></div>
+      </div>
+      <p><a href="../README.md">打开总 README</a></p>
+    </section>
+
+    <section class="slide">
+      <h2>验证结果</h2>
+      <span class="status">静态验证通过</span>
+      <ul>
+        <li>关键文件、YAML、XML、Python 语法检查通过。</li>
+        <li>WSL Humble 中自研包和官方 `rm_driver`、`rm_ros_interfaces` 在 ASCII 路径构建通过。</li>
+        <li>当前中文路径下官方 rosidl 会截断路径，已记录规避方式。</li>
+      </ul>
+      <p><a href="verification_results.md">打开验证报告</a></p>
+    </section>
+
+    <section class="slide">
+      <h2>Day 1 夹具与双臂协同</h2>
+      <span class="status">工程交付完成</span>
+      <ul>
+        <li>夹具 `GripperCommand` Action Server。</li>
+        <li>左右臂 RM65-B 驱动参数与命名空间隔离。</li>
+        <li>双臂基座、TCP、腕部相机静态 TF 配置。</li>
+      </ul>
+      <p><a href="../experiments/day01_gripper_tf_dualarm/reports/day01_report.md">打开 Day1 报告</a></p>
+    </section>
+
+    <section class="slide">
+      <h2>Day 2 力反馈与柔顺控制</h2>
+      <span class="status pending">需现场确认力传感器</span>
+      <ul>
+        <li>已映射官方力位混合控制话题。</li>
+        <li>已加入安全监督、力阈值、watchdog。</li>
+        <li>RM65-B 标准版不默认等同 6F/6FB，真力控需硬件确认。</li>
+      </ul>
+      <p><a href="../experiments/day02_force_compliance/reports/day02_report.md">打开 Day2 报告</a></p>
+    </section>
+
+    <section class="slide">
+      <h2>Day 3 视觉引导</h2>
+      <span class="status">节点框架完成</span>
+      <ul>
+        <li>目标检测节点发布 `/vision/target_pose`。</li>
+        <li>IBVS 节点发布 `/visual_servo/twist_cmd` 和对准状态。</li>
+        <li>手眼标定参数位置已预留。</li>
+      </ul>
+      <p><a href="../experiments/day03_vision_guidance/reports/day03_report.md">打开 Day3 报告</a></p>
+    </section>
+
+    <section class="slide">
+      <h2>Day 4 编织动作基元</h2>
+      <span class="status">状态机与轨迹完成</span>
+      <ul>
+        <li>BehaviorTree.CPP XML 半周期流程。</li>
+        <li>勾线、挑线、拉紧、移位种子轨迹。</li>
+        <li>示教轨迹记录器已提供。</li>
+      </ul>
+      <p><a href="../experiments/day04_weaving_primitives/reports/day04_report.md">打开 Day4 报告</a></p>
+    </section>
+
+    <section class="slide">
+      <h2>Day 5 系统集成</h2>
+      <span class="status">一键 Launch 完成</span>
+      <ul>
+        <li>`full_system.launch.py` 串联 TF、双驱动、夹具、安全、视觉、状态机。</li>
+        <li>默认 `use_hardware:=false`，用于安全 dry-run。</li>
+        <li>视频和 rosbag 必须现场录制。</li>
+      </ul>
+      <p><a href="../experiments/day05_system_demo/reports/day05_report.md">打开 Day5 报告</a></p>
+    </section>
+
+    <section class="slide">
+      <h2>现场验收限制</h2>
+      <span class="status pending">待真机复测</span>
+      <ul>
+        <li>夹具开合延时、TCP 重复定位、双臂同步误差。</li>
+        <li>重力补偿、六维力、柔顺控制、线材阈值。</li>
+        <li>相机内参、手眼标定、视觉伺服精度。</li>
+        <li>Day5 Demo 视频、rosbag、异常复位证据。</li>
+      </ul>
+      <p><a href="on_site_checklist.md">打开现场检查清单</a></p>
+    </section>
+
+    <div class="controls">
+      <button id="prev">上一个</button>
+      <button id="play" class="primary">播放</button>
+      <button id="next">下一个</button>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+    </div>
+    <footer>自动播放每 4 秒切换一页。所有数值指标需真机、夹具、相机、传感器和线材现场复测。</footer>
+  </main>
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counter = document.getElementById('counter');
+    const bar = document.getElementById('bar');
+    const play = document.getElementById('play');
+    let index = 0;
+    let timer = null;
+
+    function show(i) {
+      index = (i + slides.length) % slides.length;
+      slides.forEach((slide, n) => slide.classList.toggle('active', n === index));
+      counter.textContent = `${index + 1} / ${slides.length}`;
+      bar.style.width = `${((index + 1) / slides.length) * 100}%`;
+    }
+
+    function togglePlay() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+        play.textContent = '播放';
+      } else {
+        timer = setInterval(() => show(index + 1), 4000);
+        play.textContent = '暂停';
+      }
+    }
+
+    document.getElementById('prev').addEventListener('click', () => show(index - 1));
+    document.getElementById('next').addEventListener('click', () => show(index + 1));
+    play.addEventListener('click', togglePlay);
+    show(0);
+    togglePlay();
+  </script>
+</body>
+</html>

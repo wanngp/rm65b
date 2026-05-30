@@ -1,0 +1,39 @@
+default_velocity_scaling_factor: 0.1
+default_acceleration_scaling_factor: 0.1
+joint_limits:
+  left_joint1: &id001
+    has_velocity_limits: true
+    max_velocity: 3.14
+    has_acceleration_limits: false
+    max_acceleration: 0
+  left_joint2: &id002
+    has_velocity_limits: true
+    max_velocity: 3.14
+    has_acceleration_limits: false
+    max_acceleration: 0
+  left_joint3: &id003
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+    max_acceleration: 0
+  left_joint4: &id004
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+    max_acceleration: 0
+  left_joint5: &id005
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+    max_acceleration: 0
+  left_joint6: &id006
+    has_velocity_limits: true
+    max_velocity: 3.92
+    has_acceleration_limits: false
+    max_acceleration: 0
+  right_joint1: *id001
+  right_joint2: *id002
+  right_joint3: *id003
+  right_joint4: *id004
+  right_joint5: *id005
+  right_joint6: *id006

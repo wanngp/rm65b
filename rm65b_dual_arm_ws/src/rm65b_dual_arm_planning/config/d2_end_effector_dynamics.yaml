@@ -1,0 +1,80 @@
+d2_end_effector_dynamics:
+  frame: attached_scaled_gripper_palm
+  source: box-component identification from Gazebo gripper geometry
+  components:
+    flange_adapter:
+      mass_kg: 0.16
+      size_m: [0.062, 0.062, 0.018]
+      xyz_m: [0.0, 0.0, 0.0]
+    palm:
+      mass_kg: 0.11
+      size_m: [0.056, 0.030, 0.026]
+      xyz_m: [0.040, 0.0, 0.0]
+    upper_finger:
+      mass_kg: 0.035
+      size_m: [0.058, 0.008, 0.012]
+      xyz_m: [0.080, 0.024, 0.0]
+    upper_yarn_hook:
+      mass_kg: 0.010
+      size_m: [0.020, 0.026, 0.012]
+      xyz_m: [0.112, 0.024, 0.0]
+    lower_finger:
+      mass_kg: 0.035
+      size_m: [0.058, 0.008, 0.012]
+      xyz_m: [0.080, -0.024, 0.0]
+    lower_yarn_hook:
+      mass_kg: 0.010
+      size_m: [0.020, 0.026, 0.012]
+      xyz_m: [0.112, -0.024, 0.0]
+  identified_total:
+    mass_kg: 0.360
+    com_m: [0.034, 0.0, 0.0]
+    inertia_about_com_kg_m2:
+      ixx: 0.00012444
+      ixy: 0.0
+      ixz: 0.0
+      iyy: 0.00057061
+      iyz: 0.0
+      izz: 0.00067185
+  gazebo_links:
+    attached_scaled_gripper_palm:
+      mass_kg: 0.270
+      inertial_pose_m_rpy: [0.016296, 0.0, 0.0, 0.0, 0.0, 0.0]
+      inertia_about_link_com_kg_m2:
+        ixx: 0.00007002
+        ixy: 0.0
+        ixz: 0.0
+        iyy: 0.000194813
+        iyz: 0.0
+        izz: 0.000243800
+    attached_scaled_gripper_upper_finger:
+      mass_kg: 0.045
+      inertial_pose_m_rpy: [0.007111, 0.0, 0.0, 0.0, 0.0, 0.0]
+      inertia_about_link_com_kg_m2:
+        ixx: 0.00000129
+        ixy: 0.0
+        ixz: 0.0
+        iyy: 0.000018649
+        iyz: 0.0
+        izz: 0.000018859
+    attached_scaled_gripper_lower_finger:
+      mass_kg: 0.045
+      inertial_pose_m_rpy: [0.007111, 0.0, 0.0, 0.0, 0.0, 0.0]
+      inertia_about_link_com_kg_m2:
+        ixx: 0.00000129
+        ixy: 0.0
+        ixz: 0.0
+        iyy: 0.000018649
+        iyz: 0.0
+        izz: 0.000018859
+d2_force_control:
+  admittance:
+    equation: M_d*xdd + B_d*xd + K_d*x = F_ref - F_meas
+    virtual_mass_kg: 1.20
+    virtual_damping_ns_per_m: 38.0
+    virtual_stiffness_n_per_m: 180.0
+    joint6_rad_per_m: 1.60
+    max_offset_rad: 0.08
+  impedance_observer:
+    equation: F_imp = M_d*xdd + B_d*xd + K_d*x
+    output_topic: /force_control/impedance_wrench

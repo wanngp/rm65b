@@ -1,0 +1,252 @@
+<?xml version="1.0" ?>
+<sdf version="1.10">
+  <world name="rm65b_world">
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors"/>
+
+    <gravity>0 0 -9.8</gravity>
+    <magnetic_field>6e-6 2.3e-5 -4.2e-5</magnetic_field>
+    <atmosphere type="adiabatic"/>
+
+    <light name="key_light" type="directional">
+      <pose>0 0 5 0 0 0</pose>
+      <diffuse>0.85 0.85 0.85 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.45 0.25 -1</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>5 4</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>5 4</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.72 0.75 0.77 1</ambient>
+            <diffuse>0.72 0.75 0.77 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="weaving_fixture">
+      <static>true</static>
+      <pose>0 0.55 0.08 0 0 0</pose>
+      <link name="fixture_link">
+        <visual name="loom_frame">
+          <pose>0 0 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.78 0.05 0.08</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.22 0.24 0.25 1</ambient>
+            <diffuse>0.22 0.24 0.25 1</diffuse>
+          </material>
+        </visual>
+        <visual name="left_post">
+          <pose>-0.42 0 0.22 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.04 0.04 0.44</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.18 0.20 0.21 1</ambient>
+            <diffuse>0.18 0.20 0.21 1</diffuse>
+          </material>
+        </visual>
+        <visual name="right_post">
+          <pose>0.42 0 0.22 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.04 0.04 0.44</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.18 0.20 0.21 1</ambient>
+            <diffuse>0.18 0.20 0.21 1</diffuse>
+          </material>
+        </visual>
+        <visual name="warp_0">
+          <pose>-0.30 0 0.26 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.012 0.72 0.012</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.86 1</ambient>
+            <diffuse>0.92 0.92 0.86 1</diffuse>
+          </material>
+        </visual>
+        <visual name="warp_1">
+          <pose>-0.15 0 0.26 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.012 0.72 0.012</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.86 1</ambient>
+            <diffuse>0.92 0.92 0.86 1</diffuse>
+          </material>
+        </visual>
+        <visual name="warp_2">
+          <pose>0 0 0.26 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.012 0.72 0.012</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.86 1</ambient>
+            <diffuse>0.92 0.92 0.86 1</diffuse>
+          </material>
+        </visual>
+        <visual name="warp_3">
+          <pose>0.15 0 0.26 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.012 0.72 0.012</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.86 1</ambient>
+            <diffuse>0.92 0.92 0.86 1</diffuse>
+          </material>
+        </visual>
+        <visual name="warp_4">
+          <pose>0.30 0 0.26 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.012 0.72 0.012</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.92 0.92 0.86 1</ambient>
+            <diffuse>0.92 0.92 0.86 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="vision_target">
+      <static>true</static>
+      <pose>-0.08 0.18 0.34 0 0 0</pose>
+      <link name="target_link">
+        <visual name="target_plate">
+          <geometry>
+            <box>
+              <size>0.14 0.01 0.14</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.06 0.08 0.09 1</ambient>
+            <diffuse>0.06 0.08 0.09 1</diffuse>
+          </material>
+        </visual>
+        <visual name="target_center">
+          <pose>0 -0.008 0 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.05 0.006 0.05</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.05 0.72 0.38 1</ambient>
+            <diffuse>0.05 0.72 0.38 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="weft_yarn">
+      <static>true</static>
+      <pose>0 0.43 0.34 0 0 0</pose>
+      <link name="yarn_link">
+        <visual name="weft_segment">
+          <geometry>
+            <box>
+              <size>0.66 0.018 0.018</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.88 0.12 0.16 1</ambient>
+            <diffuse>0.88 0.12 0.16 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="force_feedback_bars">
+      <static>true</static>
+      <pose>0 -0.50 0.05 0 0 0</pose>
+      <link name="bars_link">
+        <visual name="left_force_bar">
+          <pose>-0.12 0 0.10 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.055 0.055 0.20</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.11 0.57 0.28 1</ambient>
+            <diffuse>0.11 0.57 0.28 1</diffuse>
+          </material>
+        </visual>
+        <visual name="right_force_bar">
+          <pose>0.12 0 0.13 0 0 0</pose>
+          <geometry>
+            <box>
+              <size>0.055 0.055 0.26</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.84 0.55 0.14 1</ambient>
+            <diffuse>0.84 0.55 0.14 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="evidence_camera">
+      <static>true</static>
+      <pose>2.90 -2.65 1.85 0 0.62 2.36</pose>
+      <link name="camera_link">
+        <sensor name="camera" type="camera">
+          <topic>/rm65b/evidence_camera/image</topic>
+          <always_on>true</always_on>
+          <update_rate>10</update_rate>
+          <camera>
+            <horizontal_fov>1.42</horizontal_fov>
+            <image>
+              <width>960</width>
+              <height>540</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.02</near>
+              <far>20</far>
+            </clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+  </world>
+</sdf>

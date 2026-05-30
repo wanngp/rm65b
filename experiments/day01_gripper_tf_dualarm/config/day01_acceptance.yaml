@@ -1,0 +1,15 @@
+day: 1
+title: Gripper integration, TCP/TF calibration, dual-arm coordination
+artifacts:
+  gripper_config:
+    - ../../../rm65b_dual_arm_ws/src/rm65b_gripper_control/config/left_gripper.yaml
+    - ../../../rm65b_dual_arm_ws/src/rm65b_gripper_control/config/right_gripper.yaml
+  tf_config: ../../../rm65b_dual_arm_ws/src/rm65b_dual_arm_bringup/config/dual_arm_frames.yaml
+  driver_config:
+    - ../../../rm65b_dual_arm_ws/src/rm65b_dual_arm_bringup/config/rm65b_left_driver.yaml
+    - ../../../rm65b_dual_arm_ws/src/rm65b_dual_arm_bringup/config/rm65b_right_driver.yaml
+acceptance:
+  gripper_latency_ms: 100
+  tcp_repeatability_mm: 0.5
+  dual_arm_sync_ms: 50
+field_status: pending_robot_gripper_tcp_measurement

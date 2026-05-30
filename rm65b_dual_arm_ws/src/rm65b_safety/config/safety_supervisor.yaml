@@ -1,0 +1,41 @@
+safety_supervisor:
+  ros__parameters:
+    watchdog_timeout_s: 0.5
+    max_force_n: 35.0
+    max_torque_nm: 4.0
+    max_joint_velocity_rad_s: 1.2
+    reset_requires_operator_ack: true
+    recovery_home_required: true
+    hardware_estop_topic: /safety/hardware_estop
+    fault_injection_topic: /safety/inject_fault
+    force_message_type: rm_ros_interfaces/Sixforce
+    force_topics:
+      - /left_rm_driver/rm_driver/udp_six_force
+      - /right_rm_driver/rm_driver/udp_six_force
+    collision_message_type: ros_gz_interfaces/Contacts
+    collision_stop_min_contacts: 1
+    collision_topics:
+      - /contacts/d2_force_target_panel
+      - /contacts/d2_contact_pad
+      - /contacts/vision_target
+      - /contacts/d2_left_compliance_bar
+      - /contacts/d2_right_compliance_bar
+      - /contacts/d4_upper_loom_rail
+      - /contacts/d4_lower_loom_rail
+      - /contacts/d4_shuttle_lane
+      - /contacts/d4_tension_scale
+      - /world/rm65b_world/model/d2_force_target_panel/link/link/sensor/d2_force_target_panel_contact/contact
+      - /world/rm65b_world/model/d2_contact_pad/link/link/sensor/d2_contact_pad_contact/contact
+      - /world/rm65b_world/model/vision_target/link/target_link/sensor/vision_target_contact/contact
+      - /world/rm65b_world/model/d2_left_compliance_bar/link/link/sensor/d2_left_compliance_bar_contact/contact
+      - /world/rm65b_world/model/d2_right_compliance_bar/link/link/sensor/d2_right_compliance_bar_contact/contact
+      - /world/rm65b_world/model/d4_upper_loom_rail/link/link/sensor/d4_upper_loom_rail_contact/contact
+      - /world/rm65b_world/model/d4_lower_loom_rail/link/link/sensor/d4_lower_loom_rail_contact/contact
+      - /world/rm65b_world/model/d4_shuttle_lane/link/link/sensor/d4_shuttle_lane_contact/contact
+      - /world/rm65b_world/model/d4_tension_scale/link/link/sensor/d4_tension_scale_contact/contact
+    stop_topics:
+      - /left_rm_driver/rm_driver/move_stop_cmd
+      - /right_rm_driver/rm_driver/move_stop_cmd
+    joint_limit_names_csv: "left_joint1,left_joint2,left_joint3,left_joint4,left_joint5,left_joint6,right_joint1,right_joint2,right_joint3,right_joint4,right_joint5,right_joint6"
+    joint_limit_low_csv: "-3.05,-2.45,-2.80,-3.05,-2.45,-6.20,-3.05,-2.45,-2.80,-3.05,-2.45,-6.20"
+    joint_limit_high_csv: "3.05,2.45,2.80,3.05,2.45,6.20,3.05,2.45,2.80,3.05,2.45,6.20"

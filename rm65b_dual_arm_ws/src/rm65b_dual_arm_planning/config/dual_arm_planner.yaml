@@ -1,0 +1,12 @@
+dual_arm_planner:
+  ros__parameters:
+    publish_rate_hz: 10.0
+    loop: true
+    day_id: "day05"
+    trajectory_file: ""
+    moveit_plan_file: ""
+    robot_model: "RM65-B"
+    left_base_xyz: [-0.45, 0.0, 0.02]
+    left_base_yaw: 1.5708
+    right_base_xyz: [0.45, 0.0, 0.02]
+    right_base_yaw: -1.5708

@@ -1,0 +1,62 @@
+metadata:
+  experiment: day04_weaving_tension_pid_compliance
+  model: spring_mass_damper_yarn
+  purpose: PID and compliance tuning record for D4 weaving under yarn tension
+  units:
+    force: N
+    length: m
+    mass: kg
+    time: s
+tension_model:
+  baseline_n: 0.25
+  target_tension_n: 1.85
+  min_ok_n: 0.80
+  max_ok_n: 3.40
+  yarn_mass_kg: 0.020
+  spring_k_n_per_m: 95.0
+  damping_n_s_per_m: 1.85
+  joint_to_yarn_m_per_rad: 0.018
+  max_elongation_m: 0.035
+pid:
+  kp: 0.42
+  ki: 0.08
+  kd: 0.018
+  integral_limit_n_s: 4.0
+  derivative_filter_alpha: 0.25
+compliance:
+  enabled: true
+  compliance_gain_m_per_n: 0.0035
+  max_offset_m: 0.010
+  damping_scale_when_high: 1.35
+  stiffness_scale_when_low: 0.85
+acceptance:
+  max_tracking_error_m: 0.001
+  tension_settle_time_s: 3.0
+  overshoot_limit_n: 0.35
+  no_wire_break_high_limit_n: 3.40
+  no_slack_low_limit_n: 0.80
+tuning_record:
+  - step: baseline_open_loop
+    kp: 0.0
+    ki: 0.0
+    kd: 0.0
+    observation: tension reaches target slowly and remains low during shift
+    decision: add proportional feedback
+  - step: proportional_only
+    kp: 0.36
+    ki: 0.0
+    kd: 0.0
+    observation: steady-state tension error remains about 0.18 N
+    decision: add small integral term
+  - step: pi_control
+    kp: 0.42
+    ki: 0.08
+    kd: 0.0
+    observation: steady-state error removed but pull_tight has mild overshoot
+    decision: add derivative damping
+  - step: selected_pid_compliance
+    kp: 0.42
+    ki: 0.08
+    kd: 0.018
+    observation: tension remains in 0.80-3.40 N window; compliance offset stays below 10 mm
+    decision: selected for D4 recording

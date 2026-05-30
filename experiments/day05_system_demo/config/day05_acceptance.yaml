@@ -1,0 +1,10 @@
+day: 5
+title: Integrated system demo
+artifacts:
+  launch: ../../../rm65b_dual_arm_ws/src/rm65b_dual_arm_bringup/launch/full_system.launch.py
+  safety: ../../../rm65b_dual_arm_ws/src/rm65b_safety/rm65b_safety/safety_supervisor.py
+  report: ../reports/day05_report.md
+acceptance:
+  end_to_end_latency_ms: 200
+  demo_cycle: visual_target_to_grasp_to_primitive_to_tension
+field_status: pending_robot_camera_gripper_force_full_chain

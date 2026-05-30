@@ -1,0 +1,9 @@
+system:
+  robot_model: "RealMan RM65-B"
+  driver_arm_type: "RM_65"
+  default_official_variant: "rm_65"
+  force_sensor_variant: "site-select rm_65_6f or rm_65_6fb"
+  dry_run_default: true
+  ros_domain_id: 0
+  expected_controller_version_minimum: "1.7.3 for downloaded V1.6.0 package"
+  legacy_controller_version_minimum_from_pdf: "1.4.3"

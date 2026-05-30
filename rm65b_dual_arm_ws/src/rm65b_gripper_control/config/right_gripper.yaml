@@ -1,0 +1,16 @@
+gripper_action_server:
+  ros__parameters:
+    gripper_name: right_weaving_gripper
+    joint_name: right_gripper_finger_joint
+    backend: simulation
+    hardware_enabled: false
+    open_position_m: 0.045
+    closed_position_m: 0.004
+    max_effort_n: 25.0
+    position_tolerance_m: 0.001
+    simulated_latency_s: 0.05
+    serial_port: /dev/ttyUSB1
+    modbus_host: ""
+    modbus_port: 502
+    valve_open_channel: 2
+    valve_close_channel: 3

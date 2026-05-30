@@ -1,0 +1,13 @@
+day: 4
+title: Weaving primitives
+artifacts:
+  behavior_tree: ../../../rm65b_dual_arm_ws/src/rm65b_weaving_primitives/config/weaving_tree.xml
+  trajectories: ../../../rm65b_dual_arm_ws/src/rm65b_weaving_primitives/trajectories/weaving_primitives.yaml
+acceptance:
+  replay_repeatability_mm: 1.0
+  primitives:
+    - hook_yarn
+    - pick_yarn
+    - pull_tight
+    - shift
+field_status: pending_teach_pendant_recording_and_yarn_tension_test

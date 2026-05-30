@@ -1,0 +1,74 @@
+# OS and editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# ROS 2 / colcon generated outputs
+build/
+install/
+log/
+**/build/
+**/install/
+**/log/
+.colcon/
+
+# Runtime outputs, recordings, and delivery bundles
+outputs/
+rm65b_dual_arm_ws/outputs/
+deliverables/
+e_drive_collected_*/
+latest_e_drive_collected.txt
+tmp/
+temp/
+
+# Downloaded or generated third-party/source archives
+downloads/
+rm65b_dual_arm_ws.zip
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# Official RealMan source is restored by bootstrap scripts
+rm65b_dual_arm_ws/src/ros2_rm_robot/
+
+# Rosbags, databases, and heavy media artifacts
+*.bag
+*.bag2
+*.mcap
+*.db3
+*.sqlite
+*.sqlite3
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.ppm
+
+# Logs and generated reports from runs
+*.log
+*.err
+*.out
+
+# Local accidental or malformed folders
+/

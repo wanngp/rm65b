@@ -1,0 +1,13 @@
+day: 2
+title: Force feedback, gravity compensation, compliance
+artifacts:
+  force_config: ../../../rm65b_dual_arm_ws/src/rm65b_dual_arm_bringup/config/force_compliance.yaml
+  safety_config: ../../../rm65b_dual_arm_ws/src/rm65b_dual_arm_bringup/config/safety_limits.yaml
+official_topics:
+  set_force_position_typo_compatible: set_force_postion_cmd
+  six_force: udp_six_force
+acceptance:
+  wrench_latency_ms: 10
+  loaded_pose_error_mm: 1.0
+  force_tracking_error_mm: 1.0
+field_status: pending_force_sensor_or_external_ft_confirmation

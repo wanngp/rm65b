@@ -1,0 +1,14 @@
+aruco_target_node:
+  ros__parameters:
+    image_topic: /left_camera/image_rect
+    camera_info_topic: /left_camera/camera_info
+    target_frame: left_camera_color_optical_frame
+    target_pose_topic: /vision/target_pose
+    status_topic: /vision/status
+    metrics_topic: /vision/metrics
+    tag_size_m: 0.035
+    dictionary: DICT_4X4_50
+    target_depth_m: 0.25
+    min_target_area_px: 80
+    max_target_area_fraction: 0.35
+    min_target_contrast: 18.0

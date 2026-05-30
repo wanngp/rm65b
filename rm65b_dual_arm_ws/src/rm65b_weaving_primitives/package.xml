@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>rm65b_weaving_primitives</name>
+  <version>0.1.0</version>
+  <description>Weaving primitive coordinator and trajectory tools for RM65-B.</description>
+  <maintainer email="lab@example.com">RM65-B Lab</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  <build_depend>ament_index_cpp</build_depend>
+  <build_depend>behaviortree_cpp_v3</build_depend>
+  <build_depend>control_msgs</build_depend>
+  <build_depend>rclcpp</build_depend>
+  <build_depend>rclcpp_action</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>trajectory_msgs</build_depend>
+  <build_depend>yaml-cpp</build_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>ament_index_cpp</exec_depend>
+  <exec_depend>behaviortree_cpp_v3</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>rclcpp</exec_depend>
+  <exec_depend>rclcpp_action</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
+  <exec_depend>yaml-cpp</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

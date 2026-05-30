@@ -1,0 +1,195 @@
+metadata:
+  robot_model: RM65-B dual arm
+  units:
+    position: rad
+    duration: s
+    repeatability: m
+  source: standardized D4 weaving primitive seed; replace with teach-pendant recording for final hardware evidence
+  primitive_order:
+    - hook_yarn
+    - lift_yarn
+    - pull_tight
+    - shift
+    - exchange
+  acceptance:
+    repeatability_m: 0.001
+    max_joint_step_rad: 0.08
+    max_velocity_rad_s: 0.45
+    no_pure_delay_control: true
+controllers:
+  left: /left_arm_controller/follow_joint_trajectory
+  right: /right_arm_controller/follow_joint_trajectory
+joint_names:
+  left:
+    - left_joint1
+    - left_joint2
+    - left_joint3
+    - left_joint4
+    - left_joint5
+    - left_joint6
+  right:
+    - right_joint1
+    - right_joint2
+    - right_joint3
+    - right_joint4
+    - right_joint5
+    - right_joint6
+materials:
+  warp_yarn:
+    rgba: [0.82, 0.82, 0.78, 1.0]
+    friction_mu: 1.2
+  weft_yarn:
+    rgba: [0.88, 0.12, 0.16, 1.0]
+    friction_mu: 1.4
+    radius_m: 0.009
+    mass_kg: 0.020
+  loom_rail:
+    rgba: [0.16, 0.18, 0.20, 1.0]
+    friction_mu: 1.4
+  shuttle_lane:
+    rgba: [0.84, 0.10, 0.16, 1.0]
+    friction_mu: 1.4
+  tension_scale:
+    rgba: [0.12, 0.44, 0.72, 1.0]
+    friction_mu: 1.1
+interlocks:
+  primitive_lock_topic: /weaving/primitive_lock
+  arrival_source: /joint_states
+  tension_source: /weaving/tension_n
+  tension_status_source: /weaving/tension_status
+  max_wait_arrival_s: 6.0
+  max_wait_tension_s: 8.0
+  arrival_tolerance_rad: 0.08
+tension_window:
+  hook_yarn: [0.25, 1.20]
+  lift_yarn: [0.45, 1.60]
+  pull_tight: [0.80, 3.40]
+  shift: [0.70, 3.20]
+  exchange: [0.35, 2.00]
+primitives:
+  hook_yarn:
+    description: Hook yarn by moving the left tool under the weft while the right arm holds a ready pose.
+    trigger: arms_ready and primitive_lock_free
+    completion: left/right joint arrival within arrival_tolerance_rad
+    left:
+      - time_from_start: 0.0
+        positions: [0.000, -0.350, 0.650, 0.000, 0.900, 0.000]
+      - time_from_start: 0.8
+        positions: [0.140, -0.500, 0.760, 0.090, 0.780, 0.120]
+      - time_from_start: 1.7
+        positions: [0.300, -0.640, 0.890, 0.210, 0.660, 0.300]
+      - time_from_start: 2.4
+        positions: [0.380, -0.700, 0.950, 0.280, 0.600, 0.380]
+    right:
+      - time_from_start: 0.0
+        positions: [0.000, -0.350, 0.650, 0.000, 0.900, 0.000]
+      - time_from_start: 0.8
+        positions: [-0.120, -0.455, 0.740, -0.080, 0.790, -0.120]
+      - time_from_start: 1.7
+        positions: [-0.290, -0.560, 0.860, -0.180, 0.690, -0.290]
+      - time_from_start: 2.4
+        positions: [-0.380, -0.620, 0.920, -0.240, 0.620, -0.380]
+  lift_yarn:
+    description: Lift/pick yarn over the warp lane after hook capture.
+    trigger: hook_yarn arrived and tension in lift_yarn window
+    completion: left tool reaches lifted path and right arm maintains yarn support
+    left:
+      - time_from_start: 0.0
+        positions: [0.380, -0.700, 0.950, 0.280, 0.600, 0.380]
+      - time_from_start: 0.6
+        positions: [0.455, -0.790, 1.020, 0.350, 0.535, 0.460]
+      - time_from_start: 1.2
+        positions: [0.555, -0.900, 1.085, 0.420, 0.465, 0.555]
+      - time_from_start: 1.8
+        positions: [0.620, -0.960, 1.120, 0.460, 0.420, 0.620]
+    right:
+      - time_from_start: 0.0
+        positions: [-0.380, -0.620, 0.920, -0.240, 0.620, -0.380]
+      - time_from_start: 0.9
+        positions: [-0.425, -0.645, 0.940, -0.260, 0.600, -0.410]
+      - time_from_start: 1.8
+        positions: [-0.460, -0.665, 0.960, -0.280, 0.580, -0.430]
+  pick_yarn:
+    description: Compatibility alias for lift_yarn used by older D4/D5 scripts.
+    trigger: hook_yarn arrived
+    completion: same as lift_yarn
+    left:
+      - time_from_start: 0.0
+        positions: [0.380, -0.700, 0.950, 0.280, 0.600, 0.380]
+      - time_from_start: 0.6
+        positions: [0.455, -0.790, 1.020, 0.350, 0.535, 0.460]
+      - time_from_start: 1.2
+        positions: [0.555, -0.900, 1.085, 0.420, 0.465, 0.555]
+      - time_from_start: 1.8
+        positions: [0.620, -0.960, 1.120, 0.460, 0.420, 0.620]
+    right:
+      - time_from_start: 0.0
+        positions: [-0.380, -0.620, 0.920, -0.240, 0.620, -0.380]
+      - time_from_start: 0.9
+        positions: [-0.425, -0.645, 0.940, -0.260, 0.600, -0.410]
+      - time_from_start: 1.8
+        positions: [-0.460, -0.665, 0.960, -0.280, 0.580, -0.430]
+  pull_tight:
+    description: Pull yarn until the simulated or real tension enters the OK window.
+    trigger: lift_yarn arrived and right gripper/yarn attach confirmed
+    completion: tension_status == OK and right arm arrival confirmed
+    left:
+      - time_from_start: 0.0
+        positions: [0.620, -0.960, 1.120, 0.460, 0.420, 0.620]
+      - time_from_start: 1.0
+        positions: [0.555, -0.850, 1.020, 0.360, 0.515, 0.520]
+      - time_from_start: 2.0
+        positions: [0.495, -0.770, 0.960, 0.300, 0.575, 0.455]
+    right:
+      - time_from_start: 0.0
+        positions: [-0.460, -0.665, 0.960, -0.280, 0.580, -0.430]
+      - time_from_start: 0.9
+        positions: [-0.560, -0.705, 1.010, -0.355, 0.525, -0.520]
+      - time_from_start: 1.8
+        positions: [-0.685, -0.750, 1.070, -0.435, 0.475, -0.610]
+      - time_from_start: 2.6
+        positions: [-0.780, -0.780, 1.100, -0.500, 0.440, -0.680]
+  shift:
+    description: Shift both arms to the next stitch lane while preserving the tension window.
+    trigger: pull_tight tension OK and both arms arrived
+    completion: left/right shifted lane arrival within tolerance
+    left:
+      - time_from_start: 0.0
+        positions: [0.495, -0.770, 0.960, 0.300, 0.575, 0.455]
+      - time_from_start: 0.8
+        positions: [0.410, -0.690, 0.875, 0.220, 0.640, 0.350]
+      - time_from_start: 1.6
+        positions: [0.320, -0.615, 0.810, 0.145, 0.695, 0.260]
+      - time_from_start: 2.2
+        positions: [0.260, -0.580, 0.780, 0.100, 0.720, 0.200]
+    right:
+      - time_from_start: 0.0
+        positions: [-0.780, -0.780, 1.100, -0.500, 0.440, -0.680]
+      - time_from_start: 0.8
+        positions: [-0.650, -0.710, 0.985, -0.395, 0.530, -0.540]
+      - time_from_start: 1.6
+        positions: [-0.420, -0.600, 0.830, -0.220, 0.670, -0.330]
+      - time_from_start: 2.2
+        positions: [-0.280, -0.540, 0.760, -0.120, 0.740, -0.220]
+  exchange:
+    description: Exchange hand roles and reset to the next stitch start without releasing the yarn path abruptly.
+    trigger: shift arrived and tension remains inside exchange window
+    completion: both arms ready for the next half-cycle
+    left:
+      - time_from_start: 0.0
+        positions: [0.260, -0.580, 0.780, 0.100, 0.720, 0.200]
+      - time_from_start: 0.8
+        positions: [0.165, -0.520, 0.735, 0.050, 0.780, 0.115]
+      - time_from_start: 1.5
+        positions: [0.070, -0.430, 0.690, 0.020, 0.845, 0.055]
+      - time_from_start: 2.2
+        positions: [0.000, -0.350, 0.650, 0.000, 0.900, 0.000]
+    right:
+      - time_from_start: 0.0
+        positions: [-0.280, -0.540, 0.760, -0.120, 0.740, -0.220]
+      - time_from_start: 0.8
+        positions: [-0.205, -0.490, 0.725, -0.080, 0.795, -0.155]
+      - time_from_start: 1.5
+        positions: [-0.095, -0.420, 0.690, -0.035, 0.850, -0.075]
+      - time_from_start: 2.2
+        positions: [0.000, -0.350, 0.650, 0.000, 0.900, 0.000]

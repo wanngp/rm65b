@@ -1,0 +1,8 @@
+ibvs_controller:
+  ros__parameters:
+    target_pose_topic: /vision/target_pose
+    twist_topic: /visual_servo/twist_cmd
+    gain_xy: 0.8
+    gain_z: 0.5
+    max_linear_mps: 0.03
+    target_tolerance_m: 0.001

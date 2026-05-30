@@ -1,0 +1,41 @@
+<root BTCPP_format="4" main_tree_to_execute="WeavingDemo">
+  <BehaviorTree ID="WeavingDemo">
+    <Sequence name="d4_full_weaving_cycle">
+      <Action ID="CheckInterlock" condition="arms_ready"/>
+      <Action ID="AcquirePrimitiveLock" owner="d4_weaving_cycle"/>
+
+      <Sequence name="hook_yarn_state">
+        <Action ID="RunPrimitive" primitive="hook_yarn"/>
+        <Action ID="WaitForArrival" primitive="hook_yarn" tolerance_rad="0.08" timeout_s="6.0"/>
+      </Sequence>
+
+      <Sequence name="lift_yarn_state">
+        <Action ID="WaitForTension" min_n="0.45" max_n="1.60" timeout_s="6.0"/>
+        <Action ID="RunPrimitive" primitive="lift_yarn"/>
+        <Action ID="WaitForArrival" primitive="lift_yarn" tolerance_rad="0.08" timeout_s="6.0"/>
+      </Sequence>
+
+      <Sequence name="pull_tight_state">
+        <Action ID="CloseGripper" controller="/right_gripper_controller/gripper_cmd"/>
+        <Action ID="RunPrimitive" primitive="pull_tight"/>
+        <Action ID="WaitForTension" min_n="0.80" max_n="3.40" timeout_s="8.0"/>
+        <Action ID="WaitForArrival" primitive="pull_tight" tolerance_rad="0.08" timeout_s="6.0"/>
+      </Sequence>
+
+      <Sequence name="shift_state">
+        <Action ID="RunPrimitive" primitive="shift"/>
+        <Action ID="WaitForTension" min_n="0.70" max_n="3.20" timeout_s="8.0"/>
+        <Action ID="WaitForArrival" primitive="shift" tolerance_rad="0.08" timeout_s="6.0"/>
+      </Sequence>
+
+      <Sequence name="exchange_state">
+        <Action ID="RunPrimitive" primitive="exchange"/>
+        <Action ID="WaitForTension" min_n="0.35" max_n="2.00" timeout_s="8.0"/>
+        <Action ID="WaitForArrival" primitive="exchange" tolerance_rad="0.08" timeout_s="6.0"/>
+      </Sequence>
+
+      <Action ID="OpenGripper" controller="/right_gripper_controller/gripper_cmd"/>
+      <Action ID="ReleasePrimitiveLock" owner="d4_weaving_cycle"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

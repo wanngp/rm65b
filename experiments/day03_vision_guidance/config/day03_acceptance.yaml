@@ -1,0 +1,11 @@
+day: 3
+title: Vision guidance
+artifacts:
+  vision_config: ../../../rm65b_dual_arm_ws/src/rm65b_vision_guidance/config/vision_left.yaml
+  ibvs_config: ../../../rm65b_dual_arm_ws/src/rm65b_vision_guidance/config/ibvs.yaml
+acceptance:
+  detection_fps: 30
+  pixel_error_px: 5
+  world_error_mm: 1.0
+  alignment_success_rate: 0.95
+field_status: pending_camera_installation_and_handeye
