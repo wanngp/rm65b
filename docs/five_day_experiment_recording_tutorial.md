@@ -28,7 +28,7 @@ Gazebo 世界坐标单位为米，角度为弧度。
 | 参考点 | 用途 |
 | --- | --- |
 | `attached_scaled_gripper_palm` | Gazebo 中夹具掌部，attach/contact 都以它为父坐标系 |
-| `TCP` 近似点 | `palm + x=0.112 m`，用于判断末端是否到达目标 |
+| `TCP` 近似点 | `palm + x=0.105 m`，用于判断末端是否到达目标 |
 | D2 probe 近似点 | `palm + x=0.135 m`，用于判断力控接触 |
 | 左手眼相机 | 挂在左夹具掌部，默认 `/left_camera/image_rect` |
 | 右手眼相机 | 挂在右夹具掌部，默认 `/right_camera/image_rect` |
@@ -42,12 +42,12 @@ Gazebo 世界坐标单位为米，角度为弧度。
 
 | 项目 | 世界坐标 |
 | --- | --- |
-| 左侧 TCP 参考柱 `d1_tcp_left_target` | `(-0.389, 0.123, 0.760)` |
-| 右侧 TCP 参考柱 `d1_tcp_right_target` | `(0.519, 0.075, 0.760)` |
-| 左臂同步运动参考线 `d1_sync_motion_left_lane` | `(-0.260, 0.110, 0.610)` |
-| 右臂同步运动参考线 `d1_sync_motion_right_lane` | `(0.260, 0.110, 0.610)` |
-| 中心安全间隔柱 `d1_center_clearance_marker` | `(0.000, 0.000, 0.650)` |
-| 夹爪开合标尺 `d1_gripper_gap_gauge` | `(0.000, 0.045, 0.570)` |
+| 左侧 TCP 参考柱 `d1_tcp_left_target` | `(-0.390, -0.340, 0.575)` |
+| 右侧 TCP 参考柱 `d1_tcp_right_target` | `(0.390, -0.340, 0.575)` |
+| 左臂同步运动参考线 `d1_sync_motion_left_lane` | `(-0.245, -0.340, 0.525)` |
+| 右臂同步运动参考线 `d1_sync_motion_right_lane` | `(0.245, -0.340, 0.525)` |
+| 中心安全间隔柱 `d1_center_clearance_marker` | `(0.000, -0.340, 0.555)` |
+| 夹爪开合标尺 `d1_gripper_gap_gauge` | `(0.000, -0.390, 0.510)` |
 
 结论：D1 不再做物块夹取放置，只展示四件事：夹爪开/合两个状态，`Link6 -> attached_scaled_gripper` 相对位姿，双臂自碰撞矩阵，双臂同步/交替运动能力。
 
@@ -341,7 +341,7 @@ bash scripts/play_harmonic_planned_record.sh "$OUT" "$PWD" "$DOMAIN" "$DAY"
 | 机械臂 link | D2 中 Gazebo SDF 保留官方 URDF inertial，并设置 `gravity=true` |
 | 夹爪掌部 | `mass=0.270 kg`，使用辨识出的 palm/flange 聚合惯量 |
 | 上/下手指 | 每个 `mass=0.045 kg`，使用 finger/hook 聚合惯量 |
-| 总夹具 | `mass=0.360 kg`，质心 `[0.034,0,0] m` |
+| 总夹具 | `mass=0.360 kg`，质心 `[0.028222,0,0] m` |
 | 报告 | `docs/day02_force_dynamics_impedance_admittance_report.md` |
 
 ### Gazebo 操作

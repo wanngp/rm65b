@@ -58,10 +58,20 @@ def _add_box(parent: ET.Element, tag: str, name: str, xyz: str, size: str) -> No
     ET.SubElement(geometry, "box", {"size": size})
 
 
+GRIPPER_BOXES = (
+    ("flange_adapter", "0 0 0", "0.038 0.038 0.012"),
+    ("palm", "0.030 0 0", "0.040 0.026 0.018"),
+    ("finger_upper", "0.070 0.018 0", "0.052 0.006 0.010"),
+    ("finger_lower", "0.070 -0.018 0", "0.052 0.006 0.010"),
+    ("upper_yarn_hook", "0.098 0.018 0", "0.014 0.014 0.010"),
+    ("lower_yarn_hook", "0.098 -0.018 0", "0.014 0.014 0.010"),
+)
+
+
 def _add_gripper(robot: ET.Element, side: str) -> None:
     link = ET.SubElement(robot, "link", {"name": f"{side}_attached_scaled_gripper"})
     inertial = ET.SubElement(link, "inertial")
-    ET.SubElement(inertial, "origin", {"xyz": "0.055 0 0", "rpy": "0 0 0"})
+    ET.SubElement(inertial, "origin", {"xyz": "0.040 0 0", "rpy": "0 0 0"})
     ET.SubElement(inertial, "mass", {"value": "0.05"})
     ET.SubElement(
         inertial,
@@ -76,11 +86,8 @@ def _add_gripper(robot: ET.Element, side: str) -> None:
         },
     )
     for tag in ("visual", "collision"):
-        _add_box(link, tag, "flange_adapter", "0 0 0", "0.062 0.062 0.018")
-        _add_box(link, tag, "palm", "0.040 0 0", "0.056 0.030 0.026")
-        _add_box(link, tag, "finger_upper", "0.080 0.024 0", "0.058 0.008 0.012")
-        _add_box(link, tag, "finger_lower", "0.080 -0.024 0", "0.058 0.008 0.012")
-        _add_box(link, tag, "yarn_hook", "0.112 0 0", "0.020 0.050 0.012")
+        for name, xyz, size in GRIPPER_BOXES:
+            _add_box(link, tag, name, xyz, size)
 
     joint = ET.SubElement(robot, "joint", {"name": f"{side}_attached_scaled_gripper_fixed", "type": "fixed"})
     ET.SubElement(joint, "origin", {"xyz": "0.018 0 0", "rpy": "0 0 0"})
@@ -277,6 +284,7 @@ def write_launch_and_manifest() -> None:
               <exec_depend>moveit_kinematics</exec_depend>
               <exec_depend>moveit_planners_ompl</exec_depend>
               <exec_depend>robot_state_publisher</exec_depend>
+              <exec_depend>rviz2</exec_depend>
               <exec_depend>rm_description</exec_depend>
               <exec_depend>xacro</exec_depend>
               <export>

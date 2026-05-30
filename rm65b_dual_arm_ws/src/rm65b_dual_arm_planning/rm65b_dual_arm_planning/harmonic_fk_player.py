@@ -71,28 +71,33 @@ def _write_gripper_sdf(path: Path) -> None:
     <link name="gripper_link">
       <visual name="flange_adapter">
         <pose>0 0 0 0 0 0</pose>
-        <geometry><box><size>0.062 0.062 0.018</size></box></geometry>
-        <material><ambient>0.08 0.23 0.48 1</ambient><diffuse>0.08 0.23 0.48 1</diffuse></material>
+        <geometry><box><size>0.038 0.038 0.012</size></box></geometry>
+        <material><ambient>0.16 0.22 0.28 1</ambient><diffuse>0.16 0.22 0.28 1</diffuse></material>
       </visual>
       <visual name="palm">
-        <pose>0.040 0 0 0 0 0</pose>
-        <geometry><box><size>0.056 0.030 0.026</size></box></geometry>
-        <material><ambient>0.08 0.23 0.48 1</ambient><diffuse>0.08 0.23 0.48 1</diffuse></material>
+        <pose>0.030 0 0 0 0 0</pose>
+        <geometry><box><size>0.040 0.026 0.018</size></box></geometry>
+        <material><ambient>0.16 0.22 0.28 1</ambient><diffuse>0.16 0.22 0.28 1</diffuse></material>
       </visual>
       <visual name="upper_finger">
-        <pose>0.080 0.024 0 0 0 0</pose>
-        <geometry><box><size>0.058 0.008 0.012</size></box></geometry>
-        <material><ambient>0.04 0.08 0.12 1</ambient><diffuse>0.04 0.08 0.12 1</diffuse></material>
+        <pose>0.070 0.018 0 0 0 0</pose>
+        <geometry><box><size>0.052 0.006 0.010</size></box></geometry>
+        <material><ambient>0.05 0.06 0.07 1</ambient><diffuse>0.05 0.06 0.07 1</diffuse></material>
       </visual>
       <visual name="lower_finger">
-        <pose>0.080 -0.024 0 0 0 0</pose>
-        <geometry><box><size>0.058 0.008 0.012</size></box></geometry>
-        <material><ambient>0.04 0.08 0.12 1</ambient><diffuse>0.04 0.08 0.12 1</diffuse></material>
+        <pose>0.070 -0.018 0 0 0 0</pose>
+        <geometry><box><size>0.052 0.006 0.010</size></box></geometry>
+        <material><ambient>0.05 0.06 0.07 1</ambient><diffuse>0.05 0.06 0.07 1</diffuse></material>
       </visual>
-      <visual name="yarn_hook">
-        <pose>0.112 0 0 0 0 0</pose>
-        <geometry><box><size>0.020 0.050 0.012</size></box></geometry>
-        <material><ambient>0.72 0.12 0.10 1</ambient><diffuse>0.72 0.12 0.10 1</diffuse></material>
+      <visual name="upper_yarn_hook">
+        <pose>0.098 0.018 0 0 0 0</pose>
+        <geometry><box><size>0.014 0.014 0.010</size></box></geometry>
+        <material><ambient>0.05 0.06 0.07 1</ambient><diffuse>0.05 0.06 0.07 1</diffuse></material>
+      </visual>
+      <visual name="lower_yarn_hook">
+        <pose>0.098 -0.018 0 0 0 0</pose>
+        <geometry><box><size>0.014 0.014 0.010</size></box></geometry>
+        <material><ambient>0.05 0.06 0.07 1</ambient><diffuse>0.05 0.06 0.07 1</diffuse></material>
       </visual>
     </link>
   </model>

@@ -9,7 +9,7 @@ from pathlib import Path
 DAY_NOTES = {
     "day01": [
         "D1 gripper, TF, and dual-arm setup scene.",
-        "Includes TCP target posts, handoff block, and compact gripper calibration markers.",
+        "Includes offset TCP reference markers and compact gripper calibration markers.",
     ],
     "day02": [
         "D2 force-compliance scene.",
@@ -229,12 +229,12 @@ def ensure_detachable_joint_system(world: ET.Element) -> None:
 
 
 def add_day01(world: ET.Element) -> None:
-    add_box_model(world, "d1_tcp_left_target", "-0.389 0.123 0.760 0 0 0", "0.035 0.035 0.22", "0.04 0.28 0.85 1")
-    add_box_model(world, "d1_tcp_right_target", "0.519 0.075 0.760 0 0 0", "0.035 0.035 0.22", "0.85 0.20 0.12 1")
-    add_box_model(world, "d1_sync_motion_left_lane", "-0.260 0.110 0.610 0 0 0", "0.32 0.018 0.022", "0.04 0.28 0.85 1")
-    add_box_model(world, "d1_sync_motion_right_lane", "0.260 0.110 0.610 0 0 0", "0.32 0.018 0.022", "0.85 0.20 0.12 1")
-    add_box_model(world, "d1_center_clearance_marker", "0.000 0.000 0.650 0 0 0", "0.040 0.040 0.160", "0.82 0.82 0.78 1")
-    add_box_model(world, "d1_gripper_gap_gauge", "0.000 0.045 0.570 0 0 0", "0.30 0.018 0.035", "0.92 0.80 0.18 1")
+    add_box_model(world, "d1_tcp_left_target", "-0.390 -0.340 0.575 0 0 0", "0.030 0.030 0.075", "0.16 0.36 0.68 0.72")
+    add_box_model(world, "d1_tcp_right_target", "0.390 -0.340 0.575 0 0 0", "0.030 0.030 0.075", "0.68 0.24 0.18 0.72")
+    add_box_model(world, "d1_sync_motion_left_lane", "-0.245 -0.340 0.525 0 0 0", "0.22 0.012 0.014", "0.16 0.36 0.68 0.65")
+    add_box_model(world, "d1_sync_motion_right_lane", "0.245 -0.340 0.525 0 0 0", "0.22 0.012 0.014", "0.68 0.24 0.18 0.65")
+    add_box_model(world, "d1_center_clearance_marker", "0.000 -0.340 0.555 0 0 0", "0.030 0.030 0.055", "0.72 0.72 0.68 0.65")
+    add_box_model(world, "d1_gripper_gap_gauge", "0.000 -0.390 0.510 0 0 0", "0.18 0.010 0.016", "0.82 0.68 0.18 0.70")
 
 
 def add_day02(world: ET.Element) -> None:

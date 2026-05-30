@@ -214,6 +214,8 @@ def add_position_controller(parent, joint_name, topic):
     ET.SubElement(plugin, "d_gain").text = "2.0"
 
 if model.find("link[@name='Link6']") is not None:
+    tool_color = "0.16 0.22 0.28 1"
+    finger_color = "0.05 0.06 0.07 1"
     gripper = ET.SubElement(model, "link", {"name": "attached_scaled_gripper_palm"})
     ET.SubElement(gripper, "pose", {"relative_to": "Link6"}).text = "0.018 0 0 0 0 0"
     ET.SubElement(gripper, "gravity").text = "true" if enable_d2_dynamics else "false"
@@ -229,11 +231,11 @@ if model.find("link[@name='Link6']") is not None:
         )
     else:
         add_inertial(gripper)
-    add_box_visual(gripper, "flange_adapter", "0 0 0 0 0 0", "0.062 0.062 0.018", "0.08 0.23 0.48 1", True)
-    add_box_visual(gripper, "palm", "0.040 0 0 0 0 0", "0.056 0.030 0.026", "0.08 0.23 0.48 1", True)
-    for name, y in (("attached_scaled_gripper_upper_finger", 0.024), ("attached_scaled_gripper_lower_finger", -0.024)):
+    add_box_visual(gripper, "flange_adapter", "0 0 0 0 0 0", "0.038 0.038 0.012", tool_color, True)
+    add_box_visual(gripper, "palm", "0.030 0 0 0 0 0", "0.040 0.026 0.018", tool_color, True)
+    for name, y in (("attached_scaled_gripper_upper_finger", 0.018), ("attached_scaled_gripper_lower_finger", -0.018)):
         finger = ET.SubElement(model, "link", {"name": name})
-        ET.SubElement(finger, "pose", {"relative_to": "attached_scaled_gripper_palm"}).text = f"0.080 {y:.3f} 0 0 0 0"
+        ET.SubElement(finger, "pose", {"relative_to": "attached_scaled_gripper_palm"}).text = f"0.070 {y:.3f} 0 0 0 0"
         ET.SubElement(finger, "gravity").text = "true" if enable_d2_dynamics else "false"
         if enable_d2_dynamics:
             add_inertial(
@@ -247,8 +249,8 @@ if model.find("link[@name='Link6']") is not None:
             )
         else:
             add_inertial(finger)
-        add_box_visual(finger, "finger", "0 0 0 0 0 0", "0.058 0.008 0.012", "0.04 0.08 0.12 1", True)
-        add_box_visual(finger, "yarn_hook", "0.032 0 0 0 0 0", "0.020 0.026 0.012", "0.72 0.12 0.10 1", True)
+        add_box_visual(finger, "finger", "0 0 0 0 0 0", "0.052 0.006 0.010", finger_color, True)
+        add_box_visual(finger, "yarn_hook", "0.028 0 0 0 0 0", "0.014 0.014 0.010", finger_color, True)
     fixed = ET.SubElement(model, "joint", {"name": "attached_scaled_gripper_fixed", "type": "fixed"})
     ET.SubElement(fixed, "parent").text = "Link6"
     ET.SubElement(fixed, "child").text = "attached_scaled_gripper_palm"
@@ -294,7 +296,7 @@ for idx, initial in enumerate(initial_positions, start=1):
 tree.write(dst, encoding="unicode", xml_declaration=True)
 PY
 
-python3 - "$SDF_CONTROLLED_BASE" "$SDF_CONTROLLED_LEFT" "/left_camera/image_rect" "left_eye_in_hand_camera" "0.05 0.32 0.90 1" "$LEFT_EIH_VISUAL_POSE" "$LEFT_EIH_SENSOR_POSE" "$LEFT_INITIAL_POSITIONS" "$LEFT_EIH_HORIZONTAL_FOV" <<'PY'
+python3 - "$SDF_CONTROLLED_BASE" "$SDF_CONTROLLED_LEFT" "/left_camera/image_rect" "left_eye_in_hand_camera" "0.16 0.36 0.68 1" "$LEFT_EIH_VISUAL_POSE" "$LEFT_EIH_SENSOR_POSE" "$LEFT_INITIAL_POSITIONS" "$LEFT_EIH_HORIZONTAL_FOV" <<'PY'
 import sys
 import xml.etree.ElementTree as ET
 
@@ -312,7 +314,7 @@ visual = ET.SubElement(palm, "visual", {"name": f"{sensor_name}_body"})
 ET.SubElement(visual, "pose").text = visual_pose
 geometry = ET.SubElement(visual, "geometry")
 box = ET.SubElement(geometry, "box")
-ET.SubElement(box, "size").text = "0.036 0.030 0.024"
+ET.SubElement(box, "size").text = "0.024 0.018 0.014"
 material = ET.SubElement(visual, "material")
 ET.SubElement(material, "ambient").text = color
 ET.SubElement(material, "diffuse").text = color
@@ -343,7 +345,7 @@ for plugin in model.findall("plugin"):
 tree.write(dst, encoding="unicode", xml_declaration=True)
 PY
 
-python3 - "$SDF_CONTROLLED_BASE" "$SDF_CONTROLLED_RIGHT" "/right_camera/image_rect" "right_eye_in_hand_camera" "0.90 0.18 0.10 1" "$RIGHT_EIH_VISUAL_POSE" "$RIGHT_EIH_SENSOR_POSE" "$RIGHT_INITIAL_POSITIONS" "$RIGHT_EIH_HORIZONTAL_FOV" <<'PY'
+python3 - "$SDF_CONTROLLED_BASE" "$SDF_CONTROLLED_RIGHT" "/right_camera/image_rect" "right_eye_in_hand_camera" "0.68 0.24 0.18 1" "$RIGHT_EIH_VISUAL_POSE" "$RIGHT_EIH_SENSOR_POSE" "$RIGHT_INITIAL_POSITIONS" "$RIGHT_EIH_HORIZONTAL_FOV" <<'PY'
 import sys
 import xml.etree.ElementTree as ET
 
@@ -361,7 +363,7 @@ visual = ET.SubElement(palm, "visual", {"name": f"{sensor_name}_body"})
 ET.SubElement(visual, "pose").text = visual_pose
 geometry = ET.SubElement(visual, "geometry")
 box = ET.SubElement(geometry, "box")
-ET.SubElement(box, "size").text = "0.036 0.030 0.024"
+ET.SubElement(box, "size").text = "0.024 0.018 0.014"
 material = ET.SubElement(visual, "material")
 ET.SubElement(material, "ambient").text = color
 ET.SubElement(material, "diffuse").text = color
@@ -1320,13 +1322,13 @@ start_rviz_recording
   echo "left_base_fixed: left_rm65b spawned once at x=-0.45 y=0 z=0.02 yaw=+1.5708"
   echo "right_base_fixed: right_rm65b spawned once at x=0.45 y=0 z=0.02 yaw=-1.5708"
   echo "robot_motion: Harmonic JointTrajectoryController commands joint1..joint6; no set_pose is issued for left_rm65b/right_rm65b"
-  echo "gripper_scale: total forward extension approximately 0.112 m, matched to RM65-B TCP scale"
+  echo "gripper_scale: TCP approximation is x=0.105 m from gripper palm and x=0.123 m from Link6"
   echo "gazebo_gripper: attached gripper has prismatic finger joints gripper_upper_slide/gripper_lower_slide and JointPositionController commands"
   if [[ "$DAY_NORM" == "day02" ]]; then
     echo "d2_dynamics: gravity enabled on arm and gripper links; gripper inertial parameters use identified palm/finger aggregate masses and box inertias"
     echo "d2_gripper_identified_mass_total_kg: 0.360"
-    echo "d2_gripper_identified_com_in_gripper_m: 0.034 0 0"
-    echo "d2_gripper_identified_inertia_about_com_kgm2: ixx=0.00012444 iyy=0.00057061 izz=0.00067185"
+    echo "d2_gripper_identified_com_in_gripper_m: 0.028222 0 0"
+    echo "d2_gripper_identified_inertia_about_com_kgm2: ixx=0.0000607867 iyy=0.0004030022 izz=0.0004525089"
   fi
   echo "gazebo_gripper_command_topics: /rm65b_gripper/upper_finger_cmd /rm65b_gripper/lower_finger_cmd bridged from ROS Float64 to Gazebo Double"
   if [[ "$DAY_NORM" == "day01" ]]; then

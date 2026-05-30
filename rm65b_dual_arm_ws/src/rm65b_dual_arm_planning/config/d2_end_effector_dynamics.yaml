@@ -4,38 +4,38 @@ d2_end_effector_dynamics:
   components:
     flange_adapter:
       mass_kg: 0.16
-      size_m: [0.062, 0.062, 0.018]
+      size_m: [0.038, 0.038, 0.012]
       xyz_m: [0.0, 0.0, 0.0]
     palm:
       mass_kg: 0.11
-      size_m: [0.056, 0.030, 0.026]
-      xyz_m: [0.040, 0.0, 0.0]
+      size_m: [0.040, 0.026, 0.018]
+      xyz_m: [0.030, 0.0, 0.0]
     upper_finger:
       mass_kg: 0.035
-      size_m: [0.058, 0.008, 0.012]
-      xyz_m: [0.080, 0.024, 0.0]
+      size_m: [0.052, 0.006, 0.010]
+      xyz_m: [0.070, 0.018, 0.0]
     upper_yarn_hook:
       mass_kg: 0.010
-      size_m: [0.020, 0.026, 0.012]
-      xyz_m: [0.112, 0.024, 0.0]
+      size_m: [0.014, 0.014, 0.010]
+      xyz_m: [0.098, 0.018, 0.0]
     lower_finger:
       mass_kg: 0.035
-      size_m: [0.058, 0.008, 0.012]
-      xyz_m: [0.080, -0.024, 0.0]
+      size_m: [0.052, 0.006, 0.010]
+      xyz_m: [0.070, -0.018, 0.0]
     lower_yarn_hook:
       mass_kg: 0.010
-      size_m: [0.020, 0.026, 0.012]
-      xyz_m: [0.112, -0.024, 0.0]
+      size_m: [0.014, 0.014, 0.010]
+      xyz_m: [0.098, -0.018, 0.0]
   identified_total:
     mass_kg: 0.360
-    com_m: [0.034, 0.0, 0.0]
+    com_m: [0.028222, 0.0, 0.0]
     inertia_about_com_kg_m2:
-      ixx: 0.00012444
+      ixx: 0.0000607867
       ixy: 0.0
       ixz: 0.0
-      iyy: 0.00057061
+      iyy: 0.0004030022
       iyz: 0.0
-      izz: 0.00067185
+      izz: 0.0004525089
   gazebo_links:
     attached_scaled_gripper_palm:
       mass_kg: 0.270

@@ -209,68 +209,80 @@
   </joint>
   <link name="left_attached_scaled_gripper">
     <inertial>
-      <origin xyz="0.055 0 0" rpy="0 0 0" />
+      <origin xyz="0.040 0 0" rpy="0 0 0" />
       <mass value="0.05" />
       <inertia ixx="0.00002" ixy="0" ixz="0" iyy="0.00002" iyz="0" izz="0.00002" />
     </inertial>
     <visual name="flange_adapter">
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.062 0.062 0.018" />
+        <box size="0.038 0.038 0.012" />
       </geometry>
     </visual>
     <visual name="palm">
-      <origin xyz="0.040 0 0" rpy="0 0 0" />
+      <origin xyz="0.030 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.056 0.030 0.026" />
+        <box size="0.040 0.026 0.018" />
       </geometry>
     </visual>
     <visual name="finger_upper">
-      <origin xyz="0.080 0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </visual>
     <visual name="finger_lower">
-      <origin xyz="0.080 -0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 -0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </visual>
-    <visual name="yarn_hook">
-      <origin xyz="0.112 0 0" rpy="0 0 0" />
+    <visual name="upper_yarn_hook">
+      <origin xyz="0.098 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.020 0.050 0.012" />
+        <box size="0.014 0.014 0.010" />
+      </geometry>
+    </visual>
+    <visual name="lower_yarn_hook">
+      <origin xyz="0.098 -0.018 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.014 0.014 0.010" />
       </geometry>
     </visual>
     <collision name="flange_adapter">
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.062 0.062 0.018" />
+        <box size="0.038 0.038 0.012" />
       </geometry>
     </collision>
     <collision name="palm">
-      <origin xyz="0.040 0 0" rpy="0 0 0" />
+      <origin xyz="0.030 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.056 0.030 0.026" />
+        <box size="0.040 0.026 0.018" />
       </geometry>
     </collision>
     <collision name="finger_upper">
-      <origin xyz="0.080 0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </collision>
     <collision name="finger_lower">
-      <origin xyz="0.080 -0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 -0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </collision>
-    <collision name="yarn_hook">
-      <origin xyz="0.112 0 0" rpy="0 0 0" />
+    <collision name="upper_yarn_hook">
+      <origin xyz="0.098 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.020 0.050 0.012" />
+        <box size="0.014 0.014 0.010" />
+      </geometry>
+    </collision>
+    <collision name="lower_yarn_hook">
+      <origin xyz="0.098 -0.018 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.014 0.014 0.010" />
       </geometry>
     </collision>
   </link>
@@ -477,68 +489,80 @@
   </joint>
   <link name="right_attached_scaled_gripper">
     <inertial>
-      <origin xyz="0.055 0 0" rpy="0 0 0" />
+      <origin xyz="0.040 0 0" rpy="0 0 0" />
       <mass value="0.05" />
       <inertia ixx="0.00002" ixy="0" ixz="0" iyy="0.00002" iyz="0" izz="0.00002" />
     </inertial>
     <visual name="flange_adapter">
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.062 0.062 0.018" />
+        <box size="0.038 0.038 0.012" />
       </geometry>
     </visual>
     <visual name="palm">
-      <origin xyz="0.040 0 0" rpy="0 0 0" />
+      <origin xyz="0.030 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.056 0.030 0.026" />
+        <box size="0.040 0.026 0.018" />
       </geometry>
     </visual>
     <visual name="finger_upper">
-      <origin xyz="0.080 0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </visual>
     <visual name="finger_lower">
-      <origin xyz="0.080 -0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 -0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </visual>
-    <visual name="yarn_hook">
-      <origin xyz="0.112 0 0" rpy="0 0 0" />
+    <visual name="upper_yarn_hook">
+      <origin xyz="0.098 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.020 0.050 0.012" />
+        <box size="0.014 0.014 0.010" />
+      </geometry>
+    </visual>
+    <visual name="lower_yarn_hook">
+      <origin xyz="0.098 -0.018 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.014 0.014 0.010" />
       </geometry>
     </visual>
     <collision name="flange_adapter">
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.062 0.062 0.018" />
+        <box size="0.038 0.038 0.012" />
       </geometry>
     </collision>
     <collision name="palm">
-      <origin xyz="0.040 0 0" rpy="0 0 0" />
+      <origin xyz="0.030 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.056 0.030 0.026" />
+        <box size="0.040 0.026 0.018" />
       </geometry>
     </collision>
     <collision name="finger_upper">
-      <origin xyz="0.080 0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </collision>
     <collision name="finger_lower">
-      <origin xyz="0.080 -0.024 0" rpy="0 0 0" />
+      <origin xyz="0.070 -0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.058 0.008 0.012" />
+        <box size="0.052 0.006 0.010" />
       </geometry>
     </collision>
-    <collision name="yarn_hook">
-      <origin xyz="0.112 0 0" rpy="0 0 0" />
+    <collision name="upper_yarn_hook">
+      <origin xyz="0.098 0.018 0" rpy="0 0 0" />
       <geometry>
-        <box size="0.020 0.050 0.012" />
+        <box size="0.014 0.014 0.010" />
+      </geometry>
+    </collision>
+    <collision name="lower_yarn_hook">
+      <origin xyz="0.098 -0.018 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.014 0.014 0.010" />
       </geometry>
     </collision>
   </link>

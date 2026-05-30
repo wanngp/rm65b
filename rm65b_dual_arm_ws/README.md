@@ -123,6 +123,18 @@ cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day01
 ```
 
+For a quick live-only MVP with no recording, use the joint sweep demo. It opens
+Gazebo, moves both arms through a large joint-space reciprocating trajectory,
+and toggles the grippers open/closed:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_joint_sweep_visual.sh 180
+```
+
+The first argument is the demo duration in seconds. Use `0` to run until
+interrupted.
+
 Expected result: a Gazebo window opens with the RM65-B dual-arm scene. The
 terminal prints the output directory, for example
 `~/rm65b_visual_20260530_173000/day01`. If the GUI does not open, first check

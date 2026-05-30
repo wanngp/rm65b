@@ -36,8 +36,8 @@ Gazebo 中的夹爪由录制启动脚本在 RM65-B SDF 上动态补入，配置�
 | --- | --- | --- |
 | 夹爪掌部 link | `attached_scaled_gripper_palm` | 固定到机械臂 `Link6` |
 | 掌部相对 `Link6` 位姿 | `0.018 0 0 0 0 0` | 夹爪基准坐标系前移 18 mm |
-| 上指 link | `attached_scaled_gripper_upper_finger` | 相对掌部初始 `0.080 0.024 0` |
-| 下指 link | `attached_scaled_gripper_lower_finger` | 相对掌部初始 `0.080 -0.024 0` |
+| 上指 link | `attached_scaled_gripper_upper_finger` | 相对掌部初始 `0.070 0.018 0` |
+| 下指 link | `attached_scaled_gripper_lower_finger` | 相对掌部初始 `0.070 -0.018 0` |
 | 上指关节 | `gripper_upper_slide` | prismatic，轴向 `0 1 0` |
 | 下指关节 | `gripper_lower_slide` | prismatic，轴向 `0 -1 0` |
 | 行程范围 | `[0.000, 0.018] m` | 控制夹爪开合 |
@@ -65,11 +65,11 @@ T_Link6_gripper =
 [ 0  0  0  1.000 ]
 ```
 
-夹爪基准坐标系到 TCP 近似点，取夹爪前端 `yarn_hook` 中心：
+夹爪基准坐标系到 TCP 近似点，取两指前端中线：
 
 ```text
 T_gripper_tcp =
-[ 1  0  0  0.112 ]
+[ 1  0  0  0.105 ]
 [ 0  1  0  0.000 ]
 [ 0  0  1  0.000 ]
 [ 0  0  0  1.000 ]
@@ -81,7 +81,7 @@ T_gripper_tcp =
 T_Link6_tcp = T_Link6_gripper * T_gripper_tcp
 
 T_Link6_tcp =
-[ 1  0  0  0.130 ]
+[ 1  0  0  0.123 ]
 [ 0  1  0  0.000 ]
 [ 0  0  1  0.000 ]
 [ 0  0  0  1.000 ]
