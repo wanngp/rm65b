@@ -173,14 +173,14 @@ python3 scripts/d2_impedance_admittance_calculation.py \
 
 ### 5.1 启动命令
 
-只想先看懂画面时，优先运行这个 live 可视化脚本：
+只想先看懂画面时，优先运行正式 MoveIt 可视化脚本：
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/run_day02_force_visual.sh 180
+bash scripts/run_day_visual.sh day02
 ```
 
-它会循环演示右臂靠近蓝色接触垫、按压、退出；夹爪在整个 Day2 接触任务中保持闭合。这个脚本用于快速观察 Day2 任务，不替代正式 evidence 录制。
+它通过 `dual_moveit_plan_client` 生成当天轨迹，Gazebo 和 RViz 回放同一份 MoveIt plan。旧的 `run_day02_force_visual.sh` 只保留为诊断入口，默认会转入这个正式路径。
 
 正式证据录制命令如下：
 

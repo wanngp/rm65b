@@ -36,7 +36,7 @@ Gazebo 世界坐标单位为米，角度为弧度。
 
 ## 1. 位置关系审查结论
 
-以下数值来自当前 `generate_day_world.py` 与 `moveit_plan_client.py` 的 FK 对照。录制前先按这些关系判断物体有没有放错。
+以下数值来自当前 `generate_day_world.py` 与 `dual_moveit_plan_client.py` 的 FK 对照。录制前先按这些关系判断物体有没有放错。
 
 ### Day 1 夹爪、TF、自碰撞矩阵、双臂运动能力
 
@@ -245,7 +245,7 @@ ros2 topic hz /joint_states
 日志终端按当天 `OUT` 查看，例如：
 
 ```bash
-tail -f "$OUT/logs/moveit_plan_client.log"
+tail -f "$OUT/logs/dual_moveit_plan_client.log"
 tail -f "$OUT/logs/physical_interaction_events.log"
 ```
 
@@ -331,10 +331,10 @@ ros2 topic echo /rm65b_gripper/lower_finger_cmd
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/run_day02_force_visual.sh 180
+bash scripts/run_day_visual.sh day02
 ```
 
-它会让右臂反复靠近、按压、退出蓝色接触垫，并让夹爪全程保持闭合，适合现场先确认“这个实验到底在干什么”。确认画面后，再用下面的正式录制流程。
+它会通过正式 MoveIt 链路启动 Day2 场景和轨迹，适合现场先确认“这个实验到底在干什么”。确认画面后，再用下面的正式录制流程。
 
 ```bash
 DAY=day02
@@ -420,10 +420,10 @@ ros2 topic echo /world/rm65b_world/model/d2_contact_pad/link/link/sensor/d2_cont
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/run_day03_vision_visual.sh 180
+bash scripts/run_day_visual.sh day03
 ```
 
-这个脚本只做现场可视化：左手眼相机看绿色靶标，OpenCV 输出 `/vision/debug_image`，左臂做 search-align-approach 循环，夹爪全程闭合。确认画面可读后，再运行下面的正式录制流程。
+这个脚本通过正式 MoveIt 链路做现场可视化：左手眼相机看绿色靶标，OpenCV 输出 `/vision/debug_image`，左臂执行视觉相关阶段，夹爪全程闭合。确认画面可读后，再运行下面的正式录制流程。
 
 ```bash
 DAY=day03
@@ -697,7 +697,7 @@ tail -f "$OUT/logs/physical_interaction_events.log"
 | D1 仍出现夹取放置叙事 | 停止重录，D1 只讲夹爪开合、TF、自碰撞矩阵、双臂同步/交替运动 |
 | D3 相机看不到靶标 | 先看 `/left_camera/image_rect`，不要看 `evidence_camera`；若首帧没有绿色靶标，停止重来 |
 | D2/D4 看起来像空跑 | Gazebo 视角拉近目标板/纱线，右相机和 force/tension 话题同时打开 |
-| 老师问是不是 MoveIt 轨迹 | 回答：轨迹由 `moveit_plan_client` 调 `/move_action` 生成，Gazebo JointTrajectory 和 RViz `/joint_states` 都来自同一份 MoveIt plan |
+| 老师问是不是 MoveIt 轨迹 | 回答：轨迹由 `dual_moveit_plan_client` 调 `/move_action` 生成，Gazebo JointTrajectory 和 RViz `/joint_states` 都来自同一份 MoveIt plan |
 
 录制前最后检查：
 

@@ -223,7 +223,7 @@ D5 的 Demo 不是追求成品，而是跑通闭环：
 MoveIt D5 轨迹阶段在：
 
 ```text
-rm65b_dual_arm_ws/src/rm65b_dual_arm_planning/rm65b_dual_arm_planning/moveit_plan_client.py
+rm65b_dual_arm_ws/src/rm65b_dual_arm_planning/rm65b_dual_arm_planning/dual_moveit_plan_client.py
 ```
 
 包含：

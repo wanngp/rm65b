@@ -76,6 +76,10 @@ cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day01
 ```
 
+For one-by-one D1-D5 visual acceptance, run `scripts/run_day_visual.sh day01`
+through `day05`. This path uses the dual-arm MoveIt configuration; the older
+direct Day 02/Day 03 visual scripts are diagnostic-only wrappers by default.
+
 ## Simulation-safe launch
 
 Start the offline/simulation-safe experiment stack:

@@ -123,18 +123,7 @@ cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day01
 ```
 
-To inspect the Day 02 force-compliance scene with an obvious live motion:
-
-```bash
-cd ~/rm65b_dual_arm_ws
-bash scripts/run_day02_force_visual.sh 180
-```
-
-This is the fastest way to understand Day 02 visually. It opens Gazebo with the
-Day 02 press-wall scene and repeatedly moves the right arm toward the blue pad,
-presses, releases, and keeps the gripper closed during the contact task.
-
-For the fuller evidence/recording path, use:
+To inspect the Day 02 force-compliance scene through the required MoveIt path:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
@@ -146,17 +135,22 @@ mounted on a black target wall. The yellow arrow shows the intended press
 direction, and the side gauge is only a visual cue for admittance/compliance
 response.
 
-To inspect the Day 03 vision-guidance scene with an obvious live motion:
+To inspect the Day 03 vision-guidance scene through the required MoveIt path:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/run_day03_vision_visual.sh 180
+bash scripts/run_day_visual.sh day03
 ```
 
 This opens Gazebo with the Day 03 vision board. The green target is placed in
 the left eye-in-hand camera view, the vision node publishes `/vision/status`
 and `/vision/target_pose`, and the left arm repeatedly moves through a simple
 search-align-approach cycle while the gripper stays closed.
+
+`run_day02_force_visual.sh` and `run_day03_vision_visual.sh` are now diagnostic
+entrypoints only. By default they delegate to `run_day_visual.sh day02/day03`
+so the accepted D1-D5 visual path always uses `rm65b_dual_arm_moveit_config`
+and the `dual_arms` MoveIt group.
 
 For a quick live-only MVP with no recording, use the joint sweep demo. It opens
 Gazebo, moves both arms through a large joint-space reciprocating trajectory,

@@ -23,7 +23,8 @@ Day 3 展示左臂“眼在手上”的视觉闭环能力，不再使用固定�
 | 视觉伺服控制节点 | `rm65b_dual_arm_ws/src/rm65b_vision_guidance/rm65b_vision_guidance/ibvs_controller.py` |
 | Gazebo 视觉伺服适配 | `rm65b_dual_arm_ws/src/rm65b_dual_arm_planning/rm65b_dual_arm_planning/gazebo_trajectory_relays.py` |
 | 视觉伺服计算程序 | `rm65b_dual_arm_ws/scripts/d3_visual_servo_experiment.py` |
-| 快速可视化脚本 | `rm65b_dual_arm_ws/scripts/run_day03_vision_visual.sh` |
+| 正式 MoveIt 可视化脚本 | `rm65b_dual_arm_ws/scripts/run_day_visual.sh day03` |
+| 诊断可视化脚本 | `rm65b_dual_arm_ws/scripts/run_day03_vision_visual.sh`，默认转入正式 MoveIt 路径 |
 | 启动和录制链路 | `rm65b_dual_arm_ws/scripts/play_harmonic_planned_record.sh` |
 
 ## 2. 手眼相机安装关系
@@ -181,7 +182,7 @@ $OUT/logs/vision_debug_capture_summary.txt
 
 ```bash
 cd ~/rm65b_dual_arm_ws
-bash scripts/run_day03_vision_visual.sh 180
+bash scripts/run_day_visual.sh day03
 ```
 
 该脚本生成高位视觉板和绿色靶标，启动左手眼相机、OpenCV 识别和 IBVS

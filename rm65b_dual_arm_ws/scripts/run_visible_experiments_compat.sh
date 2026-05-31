@@ -9,8 +9,7 @@ DOMAIN_START="${DOMAIN_START:-211}"
 CAPTURE_TIMEOUT="${CAPTURE_TIMEOUT:-420}"
 RECORD_RVIZ="${RECORD_RVIZ:-0}"
 GUI_START_DELAY="${GUI_START_DELAY:-12}"
-DAY03_DURATION="${DAY03_DURATION:-180}"
-FAST_DAY03="${FAST_DAY03:-1}"
+GUI_READY_CHECK_DELAY="${GUI_READY_CHECK_DELAY:-2}"
 
 source_setup_file() {
   local setup_file="$1"
@@ -83,16 +82,20 @@ run_old_visual_day() {
   local out_dir="$OUT_ROOT/$day"
   local backend_log="$out_dir/logs/visible_backend.log"
   local gui_log="$out_dir/logs/visible_gz_gui.log"
+  local day_partition="${GZ_PARTITION:-rm65b_visible_${day}_${domain}_$$}"
   local backend_pid=""
   local gui_pid=""
   mkdir -p "$out_dir/logs"
 
   echo "=== $day old-compatible visual run ==="
   echo "output=$out_dir"
+  echo "gz_partition=$day_partition"
   echo "backend_log=$backend_log"
   echo "gui_log=$gui_log"
 
   (
+    export ROS_DOMAIN_ID="$domain"
+    export GZ_PARTITION="$day_partition"
     export RECORD_RVIZ CAPTURE_TIMEOUT
     bash "$SCRIPT_DIR/play_harmonic_planned_record.sh" "$out_dir" "$WORKSPACE" "$domain" "$day"
   ) > "$backend_log" 2>&1 &
@@ -101,8 +104,16 @@ run_old_visual_day() {
   sleep "$GUI_START_DELAY"
 
   if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
-    gz sim -g > "$gui_log" 2>&1 &
+    GZ_PARTITION="$day_partition" gz sim -g > "$gui_log" 2>&1 &
     gui_pid="$!"
+    sleep "$GUI_READY_CHECK_DELAY"
+    if ! kill -0 "$gui_pid" >/dev/null 2>&1; then
+      echo "FAILED: Gazebo GUI exited immediately for $day. See $gui_log" >&2
+      tail -n 80 "$gui_log" >&2 || true
+      kill "$backend_pid" >/dev/null 2>&1 || true
+      wait "$backend_pid" >/dev/null 2>&1 || true
+      return 3
+    fi
     echo "Gazebo GUI opened for $day."
   fi
 
@@ -125,10 +136,7 @@ run_day() {
   local day="$1"
   local domain="$2"
 
-  if [[ "$day" == "day03" && "$FAST_DAY03" == "1" && -f "$SCRIPT_DIR/run_day03_vision_visual.sh" ]]; then
-    echo "=== $day fast eye-in-hand visual run ==="
-    OPEN_GZ_GUI=1 bash "$SCRIPT_DIR/run_day03_vision_visual.sh" "$DAY03_DURATION" "$domain" "$OUT_ROOT/$day"
-  elif [[ -f "$SCRIPT_DIR/run_day_visual.sh" ]]; then
+  if [[ -f "$SCRIPT_DIR/run_day_visual.sh" ]]; then
     echo "=== $day standard visual run ==="
     RECORD_RVIZ="$RECORD_RVIZ" CAPTURE_TIMEOUT="$CAPTURE_TIMEOUT" GUI_START_DELAY="$GUI_START_DELAY" \
       bash "$SCRIPT_DIR/run_day_visual.sh" "$day" "$domain" "$OUT_ROOT"

@@ -37,7 +37,7 @@
 | 夹爪 Gazebo 开合 | `play_harmonic_planned_record.sh`、`physical_interaction_controller.py` | 已有仿真演示链路 |
 | 末端到夹爪转换矩阵 | `docs/day01_gripper_tf_collision_dualarm_report.md` | 已写入报告 |
 | 双臂自碰撞矩阵 | `rm65b_dual_arm_moveit_config/config/rm65b_dual_arm.srdf`、D1 报告 | 已说明 |
-| 双臂同步/交替运动 | `moveit_plan_client.py` D1 stages | 已有规划阶段 |
+| 双臂同步/交替运动 | `dual_moveit_plan_client.py` D1 stages | 已有规划阶段 |
 | 真机延时/重复精度 | 现场视频和测量数据 | 未完成 |
 
 ### D2 动力学、阻抗/导纳、力控

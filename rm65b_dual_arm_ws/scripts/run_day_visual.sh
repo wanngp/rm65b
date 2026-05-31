@@ -39,6 +39,7 @@ export ROS_DOMAIN_ID="$DOMAIN_ID"
 export GZ_PARTITION="${GZ_PARTITION:-rm65b_visual_${DOMAIN_ID}_$$}"
 export RECORD_RVIZ="${RECORD_RVIZ:-0}"
 export CAPTURE_TIMEOUT="${CAPTURE_TIMEOUT:-360}"
+GUI_READY_CHECK_DELAY="${GUI_READY_CHECK_DELAY:-2}"
 
 backend_log="$OUT_DIR/logs/run_day_visual_backend.log"
 gui_log="$OUT_DIR/logs/run_day_visual_gz_gui.log"
@@ -68,6 +69,14 @@ if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
   echo "Opening Gazebo GUI. Close the GUI window after inspection."
   gz sim -g > "$gui_log" 2>&1 &
   gui_pid="$!"
+  sleep "$GUI_READY_CHECK_DELAY"
+  if ! kill -0 "$gui_pid" >/dev/null 2>&1; then
+    echo "Gazebo GUI exited immediately. See $gui_log" >&2
+    tail -n 80 "$gui_log" >&2 || true
+    kill "$backend_pid" >/dev/null 2>&1 || true
+    wait "$backend_pid" >/dev/null 2>&1 || true
+    exit 3
+  fi
 else
   gui_pid=""
   echo "DISPLAY/WAYLAND_DISPLAY is not set; Gazebo GUI was not opened." | tee -a "$gui_log"

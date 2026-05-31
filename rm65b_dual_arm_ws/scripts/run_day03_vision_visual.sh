@@ -7,6 +7,19 @@ WORKSPACE="$(cd "$SCRIPT_DIR/.." && pwd)"
 DURATION="${1:-180}"
 DOMAIN_ID="${2:-44}"
 OUT_ROOT="${3:-$HOME/rm65b_day03_vision_visual_$(date +%Y%m%d_%H%M%S)}"
+
+if [[ "${ALLOW_NON_MOVEIT_DAY03_VISUAL:-0}" != "1" ]]; then
+  if [[ -f "$SCRIPT_DIR/run_day_visual.sh" ]]; then
+    echo "run_day03_vision_visual.sh is a direct non-MoveIt diagnostic entry."
+    echo "Delegating to the required MoveIt visual path: run_day_visual.sh day03"
+    exec bash "$SCRIPT_DIR/run_day_visual.sh" day03 "$DOMAIN_ID" "$OUT_ROOT"
+  fi
+  echo "run_day03_vision_visual.sh direct mode is disabled because D1-D5 must use MoveIt." >&2
+  echo "Missing $SCRIPT_DIR/run_day_visual.sh; run scripts/bootstrap_vmware_ubuntu.sh --all or use the current workspace." >&2
+  echo "Set ALLOW_NON_MOVEIT_DAY03_VISUAL=1 only for direct visual-servo diagnostics." >&2
+  exit 2
+fi
+
 OUT_DIR="$OUT_ROOT"
 mkdir -p "$OUT_DIR/logs" "$OUT_DIR/left_camera_frames" "$OUT_DIR/vision_debug_frames"
 

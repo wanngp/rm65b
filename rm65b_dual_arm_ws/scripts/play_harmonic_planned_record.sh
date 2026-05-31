@@ -106,21 +106,17 @@ if [[ "$DAY_NORM" == "day03" ]]; then
   LEFT_INITIAL_POSITIONS="0.046000 -0.840000 1.161000 -0.120000 0.865000 -0.383000"
   RIGHT_INITIAL_POSITIONS="0.000000 -0.350000 0.650000 0.000000 0.900000 0.000000"
 fi
-if [ "$TRUE_DUAL_MOVEIT" = "1" ]; then
-  MOVEIT_CONFIG_PACKAGE="rm65b_dual_arm_moveit_config"
-  MOVEIT_PLAN_EXECUTABLE="dual_moveit_plan_client"
-  MOVEIT_PLAN_FILE="$OUT_DIR/logs/dual_moveit_plans.yaml"
-  MOVEIT_SUMMARY_FILE="$OUT_DIR/logs/dual_moveit_summary.json"
-  MOVEIT_LEFT_GZ_TRAJECTORY="$OUT_DIR/logs/dual_moveit_left_gz_trajectory.pbtxt"
-  MOVEIT_RIGHT_GZ_TRAJECTORY="$OUT_DIR/logs/dual_moveit_right_gz_trajectory.pbtxt"
-else
-  MOVEIT_CONFIG_PACKAGE="rm_65_config"
-  MOVEIT_PLAN_EXECUTABLE="moveit_plan_client"
-  MOVEIT_PLAN_FILE="$OUT_DIR/logs/moveit_plans.yaml"
-  MOVEIT_SUMMARY_FILE="$OUT_DIR/logs/moveit_summary.json"
-  MOVEIT_LEFT_GZ_TRAJECTORY="$OUT_DIR/logs/moveit_left_gz_trajectory.pbtxt"
-  MOVEIT_RIGHT_GZ_TRAJECTORY="$OUT_DIR/logs/moveit_right_gz_trajectory.pbtxt"
+if [ "$TRUE_DUAL_MOVEIT" != "1" ]; then
+  echo "TRUE_DUAL_MOVEIT=0 is disabled: D1-D5 must use rm65b_dual_arm_moveit_config dual_arms MoveIt planning." >&2
+  exit 2
 fi
+
+MOVEIT_CONFIG_PACKAGE="rm65b_dual_arm_moveit_config"
+MOVEIT_PLAN_EXECUTABLE="dual_moveit_plan_client"
+MOVEIT_PLAN_FILE="$OUT_DIR/logs/dual_moveit_plans.yaml"
+MOVEIT_SUMMARY_FILE="$OUT_DIR/logs/dual_moveit_summary.json"
+MOVEIT_LEFT_GZ_TRAJECTORY="$OUT_DIR/logs/dual_moveit_left_gz_trajectory.pbtxt"
+MOVEIT_RIGHT_GZ_TRAJECTORY="$OUT_DIR/logs/dual_moveit_right_gz_trajectory.pbtxt"
 
 if [ "$USE_MOVEIT_GAZEBO_TRAJECTORY" != "1" ]; then
   echo "legacy scripted trajectory/choreography is permanently disabled for acceptance recordings." >&2
@@ -844,7 +840,7 @@ ros2 run rm65b_dual_arm_planning "$MOVEIT_PLAN_EXECUTABLE" \
   --day-id "$DAY_ID" \
   --output-dir "$OUT_DIR/logs" \
   --segment-duration "$MOVEIT_SEGMENT_DURATION" \
-  > "$OUT_DIR/logs/moveit_plan_client.log" 2>&1
+  > "$OUT_DIR/logs/dual_moveit_plan_client.log" 2>&1
 
 if [ "$RUN_LEGACY_DUAL_ARM_PLANNER" = "1" ]; then
   echo "RUN_LEGACY_DUAL_ARM_PLANNER is disabled: RViz joint states must replay from the same MoveIt plan sent to Gazebo." >&2
@@ -1322,11 +1318,7 @@ start_rviz_recording
   echo "prop_motion_policy: SDF static/dynamic props may move only by Gazebo collision/contact or model-scoped DetachableJoint fixed joints"
   echo "legacy_handwritten_trajectory: removed from this acceptance recording path"
   echo "base_world: empty world; day-specific props are generated into rm65b_planned_world_runtime.sdf"
-  if [ "$TRUE_DUAL_MOVEIT" = "1" ]; then
-    echo "trajectory_source: MoveIt2 /move_action via rm65b_dual_arm_moveit_config dual_arms group"
-  else
-    echo "trajectory_source: MoveIt2 /move_action via rm_65_config move_group"
-  fi
+  echo "trajectory_source: MoveIt2 /move_action via rm65b_dual_arm_moveit_config dual_arms group"
   echo "left_base_fixed: left_rm65b spawned once at x=-0.45 y=0 z=0.02 yaw=+1.5708"
   echo "right_base_fixed: right_rm65b spawned once at x=0.45 y=0 z=0.02 yaw=-1.5708"
   echo "robot_motion: Harmonic JointTrajectoryController commands joint1..joint6; no set_pose is issued for left_rm65b/right_rm65b"
