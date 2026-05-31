@@ -123,6 +123,15 @@ cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day01
 ```
 
+On the MVP visual branch this command uses the fast MoveIt runner:
+
+- D1: MoveIt plans a clear dual-arm straight-line sweep and Gazebo executes it.
+- D2: MoveIt plans approach/press/release stages, with visible compliant relief
+  and `/force_control/*` state output.
+
+Use `USE_FULL_RECORDING_VISUAL=1 bash scripts/run_day_visual.sh day01` only for
+the slower full evidence-recording path.
+
 To inspect the Day 02 force-compliance scene through the required MoveIt path:
 
 ```bash

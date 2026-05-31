@@ -9,6 +9,10 @@ DOMAIN_ID="${2:-211}"
 OUT_ROOT="${3:-$HOME/rm65b_visual_$(date +%Y%m%d_%H%M%S)}"
 OUT_DIR="$OUT_ROOT/$DAY_ID"
 
+if [[ "${USE_FULL_RECORDING_VISUAL:-0}" != "1" && -f "$SCRIPT_DIR/run_moveit_mvp_visual.sh" ]]; then
+  exec bash "$SCRIPT_DIR/run_moveit_mvp_visual.sh" "$DAY_ID" "$DOMAIN_ID" "$OUT_ROOT"
+fi
+
 mkdir -p "$OUT_DIR/logs"
 
 source_setup_file() {

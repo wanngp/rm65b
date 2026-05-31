@@ -79,6 +79,9 @@ bash scripts/run_day_visual.sh day01
 For one-by-one D1-D5 visual acceptance, run `scripts/run_day_visual.sh day01`
 through `day05`. This path uses the dual-arm MoveIt configuration; the older
 direct Day 02/Day 03 visual scripts are diagnostic-only wrappers by default.
+On the MVP visual branch, `run_day_visual.sh` defaults to the fast MoveIt
+visual runner. Set `USE_FULL_RECORDING_VISUAL=1` only when you need the slower
+full evidence-recording chain.
 
 ## Simulation-safe launch
 
