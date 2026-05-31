@@ -100,7 +100,15 @@ def add_inertial(parent: ET.Element, mass: str = "0.025") -> None:
     text(inertia, "izz", "0.000010")
 
 
-def add_visual_box(parent: ET.Element, name: str, size: str, color: str, pose: str | None = None) -> None:
+def add_visual_box(
+    parent: ET.Element,
+    name: str,
+    size: str,
+    color: str,
+    pose: str | None = None,
+    *,
+    collision: bool = False,
+) -> None:
     visual = ET.SubElement(parent, "visual", {"name": name})
     if pose is not None:
         text(visual, "pose", pose)
@@ -110,6 +118,13 @@ def add_visual_box(parent: ET.Element, name: str, size: str, color: str, pose: s
     material = ET.SubElement(visual, "material")
     text(material, "ambient", color)
     text(material, "diffuse", color)
+    if collision:
+        coll = ET.SubElement(parent, "collision", {"name": name})
+        if pose is not None:
+            text(coll, "pose", pose)
+        coll_geometry = ET.SubElement(coll, "geometry")
+        coll_box = ET.SubElement(coll_geometry, "box")
+        text(coll_box, "size", size)
 
 
 def add_gripper_position_controller(model: ET.Element, joint_name: str, topic: str) -> None:
@@ -158,8 +173,15 @@ def add_movable_gripper(model: ET.Element, side: str, color: str) -> None:
         pose_elem.set("relative_to", parent_link)
         text(finger, "gravity", "false")
         add_inertial(finger)
-        add_visual_box(finger, "finger", "0.052 0.006 0.010", color)
-        add_visual_box(finger, "yarn_hook", "0.014 0.014 0.010", color, "0.028 0 0 0 0 0")
+        add_visual_box(finger, "finger", "0.052 0.006 0.010", color, collision=True)
+        add_visual_box(
+            finger,
+            "yarn_hook",
+            "0.014 0.014 0.010",
+            color,
+            "0.028 0 0 0 0 0",
+            collision=True,
+        )
 
         joint = ET.SubElement(model, "joint", {"name": joint_name, "type": "prismatic"})
         text(joint, "parent", parent_link)
@@ -233,9 +255,10 @@ def add_day_scene(world: ET.Element, day_id: str) -> None:
         add_box_model(world, "d1_forbidden_collision_zone", "0 -0.10 0.55 0 0 0", "0.18 0.55 0.36", "0.95 0.08 0.06 0.55")
         add_box_model(world, "d1_goal_gate", "0 0.35 0.60 0 0 0", "0.75 0.035 0.55", "0.08 0.80 0.25 0.45", collision=False)
     elif day in {"day02", "d2"}:
-        add_box_model(world, "d2_force_wall", "0.58 -0.23 0.55 0 0 0", "0.34 0.06 0.48", "0.10 0.12 0.14 1")
-        add_box_model(world, "d2_compliance_pad", "0.58 -0.285 0.55 0 0 0", "0.20 0.035 0.20", "0.10 0.35 0.95 1")
-        add_box_model(world, "d2_relief_window", "0.28 -0.26 0.68 0 0 0", "0.22 0.025 0.22", "0.10 0.85 0.35 0.55", collision=False)
+        add_box_model(world, "d2_force_wall", "0.32 -0.17 0.56 0 0 0", "0.48 0.08 0.52", "0.10 0.12 0.14 1")
+        add_box_model(world, "d2_compliance_pad", "0.32 -0.225 0.56 0 0 0", "0.32 0.045 0.28", "0.10 0.35 0.95 1")
+        add_box_model(world, "d2_contact_face", "0.32 -0.253 0.56 0 0 0", "0.36 0.010 0.32", "0.95 0.16 0.10 0.70", collision=False)
+        add_box_model(world, "d2_relief_window", "0.18 -0.25 0.68 0 0 0", "0.26 0.025 0.24", "0.10 0.85 0.35 0.55", collision=False)
     elif day in {"day03", "d3"}:
         add_box_model(world, "d3_vision_board", "-0.34 0.38 0.68 0 0 0", "0.34 0.035 0.30", "0.05 0.09 0.12 1")
         add_box_model(world, "d3_green_target", "-0.34 0.35 0.70 0 0 0", "0.10 0.018 0.10", "0.05 0.95 0.25 1")

@@ -130,9 +130,12 @@ This command uses the clean MoveIt/Gazebo runner:
   `dual_rm65b_mvp` model moving through a custom lane/collision-zone scene.
   D1 is the node/topic baseline for the later days: it publishes MoveIt
   planning status, dual-arm trajectories, joint states, Gazebo trajectory
-  commands, acceptance status, and visible gripper open/close commands.
+  commands, acceptance status, and visible gripper open/close commands. The
+  runner asks MoveIt to plan every stage, then sends Gazebo a dense smoothed
+  trajectory between the MoveIt-validated stage waypoints for visual playback.
 - D2: MoveIt plans approach/press/release stages, with visible compliant relief
-  and `/force_control/*` state output.
+  and `/force_control/*` state output. The D2 force-pad scene is placed close
+  to the right gripper path so the visual contact is easy to inspect.
 - The MVP runner does not use the legacy world generator and does not spawn
   left and right arms as separate models.
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import time
 from pathlib import Path
 
@@ -44,6 +45,32 @@ def _mirror(point: tuple[float, ...]) -> tuple[float, ...]:
     return (-q1, q2, q3, -q4, q5, -q6)
 
 
+def _smootherstep(alpha: float) -> float:
+    t = min(max(float(alpha), 0.0), 1.0)
+    return t * t * t * (t * (6.0 * t - 15.0) + 10.0)
+
+
+def _seconds_to_msg(point: JointTrajectoryPoint, seconds: float) -> None:
+    value = max(float(seconds), 0.0)
+    point.time_from_start.sec = int(value)
+    point.time_from_start.nanosec = int((value - int(value)) * 1e9)
+
+
+def _finite_difference_velocities(positions: list[list[float]], times: list[float]) -> list[list[float]]:
+    velocities: list[list[float]] = []
+    last_idx = len(positions) - 1
+    for idx, current in enumerate(positions):
+        if idx == 0 or idx == last_idx:
+            velocities.append([0.0 for _ in current])
+            continue
+        dt = times[idx + 1] - times[idx - 1]
+        if dt <= 1e-9:
+            velocities.append([0.0 for _ in current])
+            continue
+        velocities.append([(b - a) / dt for a, b in zip(positions[idx - 1], positions[idx + 1])])
+    return velocities
+
+
 def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float, ...]]]:
     day = day_id.lower()
     if day in {"day01", "d1"}:
@@ -64,6 +91,7 @@ def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float
             ("d2_compliance_relief", D2_LEFT_OBSERVER, D2_RIGHT_RELIEF),
             ("d2_force_press_settle", D2_LEFT_OBSERVER, D2_RIGHT_PRESS),
             ("d2_release", D2_LEFT_OBSERVER, D2_RIGHT_READY),
+            ("d2_return_home", HOME, HOME),
         ]
     if day in {"day03", "d3"}:
         left_view = (0.046, -0.840, 1.161, -0.120, 0.865, -0.383)
@@ -94,12 +122,14 @@ def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float
 def _trajectory_msg(points: list[dict], side: str) -> JointTrajectory:
     msg = JointTrajectory()
     msg.joint_names = list(LEFT_JOINTS if side == "left" else RIGHT_JOINTS)
-    for frame in points:
+    positions = [[float(v) for v in frame[side]] for frame in points]
+    times = [float(frame["time_from_start"]) for frame in points]
+    velocities = _finite_difference_velocities(positions, times)
+    for frame, frame_positions, frame_velocities in zip(points, positions, velocities):
         point = JointTrajectoryPoint()
-        point.positions = [float(v) for v in frame[side]]
-        seconds = max(float(frame["time_from_start"]), 0.0)
-        point.time_from_start.sec = int(seconds)
-        point.time_from_start.nanosec = int((seconds - int(seconds)) * 1e9)
+        point.positions = frame_positions
+        point.velocities = frame_velocities
+        _seconds_to_msg(point, float(frame["time_from_start"]))
         msg.points.append(point)
     return msg
 
@@ -249,12 +279,20 @@ class MoveItMvpReplay(Node):
             segment = self.plan_segment(stage, start, target)
             segments.append(segment)
 
-            raw = segment["trajectory_points"]
-            duration = max(self.args.segment_duration, 0.5 * max(len(raw) - 1, 1))
-            for pidx, positions in enumerate(raw):
-                if frames and pidx == 0:
+            start_positions = [float(v) for v in segment["start"]]
+            target_positions = [float(v) for v in segment["target"]]
+            duration = self._stage_duration(stage)
+            steps = max(2, int(math.ceil(duration * max(self.args.trajectory_rate_hz, 1.0))))
+            for step in range(steps + 1):
+                if frames and step == 0:
                     continue
-                t = elapsed + duration * pidx / max(len(raw) - 1, 1)
+                alpha = step / steps
+                smooth_alpha = _smootherstep(alpha)
+                positions = [
+                    start + (target - start) * smooth_alpha
+                    for start, target in zip(start_positions, target_positions)
+                ]
+                t = elapsed + duration * alpha
                 frames.append(
                     {
                         "time_from_start": round(t, 4),
@@ -265,6 +303,13 @@ class MoveItMvpReplay(Node):
                 )
             elapsed = float(frames[-1]["time_from_start"])
         return frames, segments
+
+    def _stage_duration(self, stage: str) -> float:
+        if "press" in stage or "relief" in stage:
+            return max(self.args.segment_duration * 1.20, self.args.segment_duration)
+        if "return_home" in stage:
+            return max(self.args.segment_duration * 0.85, 2.0)
+        return self.args.segment_duration
 
     def write_outputs(self, points: list[dict], segments: list[dict]) -> None:
         out = Path(self.args.output_dir)
@@ -296,6 +341,8 @@ class MoveItMvpReplay(Node):
                 }
                 for s in segments
             ],
+            "visual_points": len(points),
+            "trajectory_rate_hz": self.args.trajectory_rate_hz,
         }
         (out / "mvp_moveit_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
@@ -325,12 +372,14 @@ class MoveItMvpReplay(Node):
     def _combined_trajectory(self, points: list[dict]) -> JointTrajectory:
         msg = JointTrajectory()
         msg.joint_names = list(DUAL_JOINTS)
-        for frame in points:
+        positions = [[float(v) for v in frame["left"] + frame["right"]] for frame in points]
+        times = [float(frame["time_from_start"]) for frame in points]
+        velocities = _finite_difference_velocities(positions, times)
+        for frame, frame_positions, frame_velocities in zip(points, positions, velocities):
             point = JointTrajectoryPoint()
-            point.positions = [float(v) for v in frame["left"] + frame["right"]]
-            seconds = max(float(frame["time_from_start"]), 0.0)
-            point.time_from_start.sec = int(seconds)
-            point.time_from_start.nanosec = int((seconds - int(seconds)) * 1e9)
+            point.positions = frame_positions
+            point.velocities = frame_velocities
+            _seconds_to_msg(point, float(frame["time_from_start"]))
             msg.points.append(point)
         return msg
 
@@ -380,9 +429,14 @@ class MoveItMvpReplay(Node):
         if day in {"day01", "d1"}:
             open_position = 0.018
             closed_position = 0.001
-            period = 2.4
+            period = 3.2
             alpha = (loop_elapsed % period) / period
-            position = open_position if alpha < 0.5 else closed_position
+            if alpha < 0.5:
+                grip_alpha = _smootherstep(alpha * 2.0)
+                position = open_position + (closed_position - open_position) * grip_alpha
+            else:
+                grip_alpha = _smootherstep((alpha - 0.5) * 2.0)
+                position = closed_position + (open_position - closed_position) * grip_alpha
         elif day in {"day02", "d2"}:
             position = 0.001 if ("press" in phase or "relief" in phase) else 0.012
         else:
@@ -405,8 +459,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--velocity-scaling", type=float, default=0.45)
     parser.add_argument("--acceleration-scaling", type=float, default=0.45)
     parser.add_argument("--joint-tolerance", type=float, default=0.015)
-    parser.add_argument("--segment-duration", type=float, default=4.2)
-    parser.add_argument("--state-rate-hz", type=float, default=20.0)
+    parser.add_argument("--segment-duration", type=float, default=4.0)
+    parser.add_argument("--trajectory-rate-hz", type=float, default=24.0)
+    parser.add_argument("--state-rate-hz", type=float, default=30.0)
     parser.add_argument("--gazebo-topic", default="/model/dual_rm65b_mvp/joint_trajectory")
     return parser.parse_args()
 
