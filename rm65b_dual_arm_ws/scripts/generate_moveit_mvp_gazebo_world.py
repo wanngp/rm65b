@@ -274,6 +274,38 @@ def add_held_contact_block(model: ET.Element, side: str) -> None:
     text(joint, "child", f"{side}_mvp_held_contact_block")
 
 
+def add_gripper_yarn_visual(model: ET.Element, side: str) -> None:
+    parent_link = f"{side}_attached_scaled_gripper"
+    palm = model.find(f"link[@name='{parent_link}']")
+    if palm is None:
+        parent_link = f"{side}_Link6"
+        palm = model.find(f"link[@name='{parent_link}']")
+    if palm is None:
+        return
+
+    add_visual_box(
+        palm,
+        "moving_yarn_segment",
+        "0.260 0.022 0.022",
+        "1.00 0.05 0.04 1",
+        "0.130 0 0 0 0 0",
+    )
+    add_visual_box(
+        palm,
+        "moving_yarn_highlight",
+        "0.260 0.007 0.007",
+        "1.00 0.90 0.08 1",
+        "0.130 0 0.016 0 0 0",
+    )
+    add_visual_box(
+        palm,
+        "moving_yarn_grip_knot",
+        "0.040 0.040 0.040",
+        "1.00 0.05 0.04 1",
+        "0.045 0 0 0 0 0",
+    )
+
+
 def add_eye_in_hand_camera(model: ET.Element, side: str) -> None:
     parent_link = f"{side}_attached_scaled_gripper"
     if model.find(f"link[@name='{parent_link}']") is None:
@@ -344,11 +376,49 @@ def load_model(model_sdf: Path, day_id: str) -> ET.Element:
     day = day_id.lower()
     if day in {"day02", "d2"}:
         add_held_contact_block(model, "right")
-    if day in {"day03", "d3"}:
+    if day in {"day04", "d4", "day05", "d5"}:
+        add_gripper_yarn_visual(model, "left")
+        add_gripper_yarn_visual(model, "right")
+    if day in {"day03", "d3", "day04", "d4", "day05", "d5"}:
         add_eye_in_hand_camera(model, "right")
-    if day in {"day05", "d5"}:
-        add_eye_in_hand_camera(model, "left")
     return model
+
+
+def add_weaving_mvp_scene(world: ET.Element, prefix: str) -> None:
+    add_box_model(world, f"{prefix}_upper_loom_rail", "0 0.36 0.74 0 0 0", "1.08 0.035 0.035", "0.78 0.64 0.20 1")
+    add_box_model(world, f"{prefix}_lower_loom_rail", "0 0.36 0.46 0 0 0", "1.08 0.035 0.035", "0.78 0.64 0.20 1")
+    add_box_model(world, f"{prefix}_left_loom_post", "-0.56 0.36 0.60 0 0 0", "0.035 0.035 0.34", "0.56 0.42 0.18 1")
+    add_box_model(world, f"{prefix}_right_loom_post", "0.56 0.36 0.60 0 0 0", "0.035 0.035 0.34", "0.56 0.42 0.18 1")
+    add_box_model(world, f"{prefix}_weft_yarn", "0 0.275 0.60 0 0 0", "0.94 0.030 0.030", "1.00 0.06 0.05 1", collision=False)
+    add_box_model(world, f"{prefix}_weft_yarn_highlight", "0 0.248 0.602 0 0 0", "0.94 0.010 0.010", "1.00 0.92 0.12 1", collision=False)
+    add_box_model(world, f"{prefix}_shuttle_lane", "0 0.285 0.60 0 0 0", "1.00 0.024 0.060", "0.10 0.65 0.95 0.62", collision=False)
+    add_box_model(world, f"{prefix}_tension_scale", "0.67 0.31 0.64 0 0 0", "0.055 0.020 0.24", "0.08 0.12 0.15 1")
+    add_box_model(world, f"{prefix}_tension_target_band", "0.672 0.292 0.61 0 0 0", "0.060 0.006 0.070", "0.10 0.85 0.35 0.85", collision=False)
+    add_box_model(world, f"{prefix}_tension_spring", "0.61 0.305 0.60 0 0 0", "0.095 0.010 0.010", "0.96 0.78 0.16 1", collision=False)
+    add_box_model(world, f"{prefix}_tension_mass", "0.56 0.305 0.60 0 0 0", "0.035 0.035 0.035", "0.96 0.78 0.16 1", collision=False)
+    add_box_model(world, f"{prefix}_hook_target_marker", "0.43 0.300 0.61 0 0 0", "0.055 0.012 0.055", "0.95 0.16 0.10 0.70", collision=False)
+    add_box_model(world, f"{prefix}_lift_target_marker", "-0.30 0.300 0.68 0 0 0", "0.070 0.012 0.030", "0.20 0.65 1.00 0.68", collision=False)
+    add_box_model(world, f"{prefix}_exchange_target_marker", "0 0.300 0.60 0 0 0", "0.060 0.012 0.060", "0.18 0.90 0.40 0.68", collision=False)
+    for idx, x in enumerate((-0.48, -0.36, -0.24, -0.12, 0.0, 0.12, 0.24, 0.36, 0.48)):
+        add_box_model(
+            world,
+            f"{prefix}_warp_thread_{idx:02d}",
+            f"{x:.3f} 0.252 0.60 0 0 0",
+            "0.012 0.012 0.300",
+            "0.98 0.96 0.76 1",
+            collision=False,
+        )
+    add_box_model(world, f"{prefix}_left_yarn_knot", "-0.47 0.248 0.60 0 0 0", "0.045 0.045 0.045", "1.00 0.06 0.05 1", collision=False)
+    add_box_model(world, f"{prefix}_right_yarn_knot", "0.47 0.248 0.60 0 0 0", "0.045 0.045 0.045", "1.00 0.06 0.05 1", collision=False)
+
+
+def add_figure_eight_markers(world: ET.Element, prefix: str) -> None:
+    for name, cx in (("left_loop", -0.22), ("right_loop", 0.22)):
+        add_box_model(world, f"{prefix}_{name}_top", f"{cx:.3f} 0.245 0.685 0 0 0", "0.250 0.024 0.024", "0.45 0.18 0.95 1", collision=False)
+        add_box_model(world, f"{prefix}_{name}_bottom", f"{cx:.3f} 0.245 0.515 0 0 0", "0.250 0.024 0.024", "0.45 0.18 0.95 1", collision=False)
+        add_box_model(world, f"{prefix}_{name}_outer", f"{cx - 0.125:.3f} 0.245 0.600 0 0 0", "0.024 0.024 0.170", "0.45 0.18 0.95 1", collision=False)
+        add_box_model(world, f"{prefix}_{name}_inner", f"{cx + 0.125:.3f} 0.245 0.600 0 0 0", "0.024 0.024 0.170", "0.45 0.18 0.95 1", collision=False)
+    add_box_model(world, f"{prefix}_figure_eight_cross", "0 0.240 0.600 0 0 0", "0.070 0.026 0.070", "0.98 0.84 0.20 1", collision=False)
 
 
 def add_day_scene(world: ET.Element, day_id: str) -> None:
@@ -381,13 +451,19 @@ def add_day_scene(world: ET.Element, day_id: str) -> None:
         add_box_model(world, "d3_board_size_reference_y", "0.843 0.150 0.715 0 0 0", "0.004 0.080 0.010", "0.20 0.65 1.00 0.70", collision=False)
         add_box_model(world, "d3_camera_alignment_lane", "0.685 0.150 0.660 0 0 0", "0.300 0.018 0.018", "0.20 0.65 1.00 0.55", collision=False)
     elif day in {"day04", "d4"}:
-        add_box_model(world, "d4_upper_loom_rail", "0 0.36 0.74 0 0 0", "1.00 0.035 0.035", "0.78 0.64 0.20 1")
-        add_box_model(world, "d4_lower_loom_rail", "0 0.36 0.46 0 0 0", "1.00 0.035 0.035", "0.78 0.64 0.20 1")
-        add_box_model(world, "d4_weft_yarn", "0 0.31 0.60 0 0 0", "0.90 0.018 0.018", "0.92 0.12 0.16 1", collision=False)
+        add_weaving_mvp_scene(world, "d4")
     else:
-        add_box_model(world, "d5_force_wall", "0.58 -0.23 0.55 0 0 0", "0.34 0.06 0.48", "0.10 0.12 0.14 1")
-        add_box_model(world, "d5_vision_target", "-0.34 0.35 0.70 0 0 0", "0.10 0.018 0.10", "0.05 0.95 0.25 1")
-        add_box_model(world, "d5_loom_lane", "0 0.36 0.58 0 0 0", "1.00 0.035 0.25", "0.78 0.64 0.20 0.45", collision=False)
+        add_weaving_mvp_scene(world, "d5")
+        add_figure_eight_markers(world, "d5")
+        add_box_model(world, "d5_vision_lock_marker", "0.10 0.292 0.60 0 0 0", "0.060 0.008 0.060", "0.05 0.95 0.25 0.85", collision=False)
+        add_aruco_marker_y_plane(
+            world,
+            name_prefix="d5_aruco_4x4_50_id7",
+            center_x=0.10,
+            face_y=0.286,
+            center_z=0.60,
+            marker_size_m=0.080,
+        )
 
 
 def build_world(model: ET.Element, day_id: str, output: Path) -> None:

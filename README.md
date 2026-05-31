@@ -81,7 +81,9 @@ through `day05`. This path uses the dual-arm MoveIt configuration; the older
 direct Day 02/Day 03 visual scripts are diagnostic-only wrappers by default.
 On the MVP visual branch, `run_day_visual.sh` is a fast MoveIt/Gazebo runner:
 it generates one custom Gazebo world containing a single `dual_rm65b_mvp` model,
-not two separately spawned arms.
+not two separately spawned arms. Day 04 and Day 05 use a simplified loom scene
+where both grippers face the same direction, perpendicular to the left-right
+base line, and publish `/weaving/*` inspection topics.
 
 ## Simulation-safe launch
 

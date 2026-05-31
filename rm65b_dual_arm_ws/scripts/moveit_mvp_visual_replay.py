@@ -51,6 +51,26 @@ D45_RIGHT_READY = (-0.280, -0.540, 0.760, -0.120, 0.740, -0.220)
 D45_RIGHT_PRESS = (-0.780, -0.780, 1.100, -0.500, 0.440, -0.680)
 D45_RIGHT_RELIEF = (-0.650, -0.725, 1.040, -0.430, 0.500, -0.580)
 
+D4_LEFT_GUARD = (0.398, -0.594, -0.378, -1.913, -1.816, -0.668)
+D4_LEFT_RECEIVE = (-0.348, -0.571, -0.391, -1.389, -1.270, -0.632)
+D4_LEFT_TENSION = (-0.210, -0.545, -0.365, 1.820, -1.641, 0.686)
+D4_RIGHT_ENTRY = (0.005, 0.326, 1.269, 0.782, -1.592, 0.014)
+D4_RIGHT_INSERT = (0.293, 0.381, 1.136, -0.879, -1.310, -0.145)
+D4_RIGHT_PULL_TIGHT = (-0.395, 1.513, -1.219, 0.191, -0.277, 0.212)
+D5_LEFT_LOOP_TOP = (-0.063, -0.611, -0.157, -1.829, -1.231, -0.745)
+D5_LEFT_LOOP_BOTTOM = (-0.085, -0.435, -0.646, -1.070, -1.740, -0.469)
+D5_LEFT_CENTER = (-0.632, -0.860, -0.066, -1.467, -0.877, -0.575)
+D5_RIGHT_LOOP_TOP = (0.439, 1.245, -0.854, -0.228, -0.362, -0.227)
+D5_RIGHT_LOOP_BOTTOM = (0.053, 0.339, 1.391, -1.204, -1.578, -0.167)
+D5_RIGHT_CENTER = (0.706, 0.788, 0.512, -0.756, -0.890, -0.339)
+D4_TENSION_WINDOWS = {
+    "hook_yarn": (0.25, 1.20, 0.55),
+    "lift_yarn": (0.45, 1.60, 1.05),
+    "pull_tight": (0.80, 3.40, 1.85),
+    "shift": (0.70, 3.20, 1.65),
+    "exchange": (0.35, 2.00, 0.85),
+}
+
 
 def _lerp(a: tuple[float, ...], b: tuple[float, ...], alpha: float) -> tuple[float, ...]:
     return tuple(float(x) + (float(y) - float(x)) * alpha for x, y in zip(a, b))
@@ -163,9 +183,28 @@ def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float
     if day in {"day04", "d4"}:
         return [
             ("home", HOME, HOME),
-            ("d4_hook_yarn", D1_LINE_A, D45_RIGHT_READY),
-            ("d4_pull_tight", D1_LINE_B, D45_RIGHT_PRESS),
-            ("d4_release", HOME, HOME),
+            ("hook_yarn", D4_LEFT_GUARD, D4_RIGHT_ENTRY),
+            ("lift_yarn", D4_LEFT_RECEIVE, D4_RIGHT_ENTRY),
+            ("pull_tight", D4_LEFT_TENSION, D4_RIGHT_PULL_TIGHT),
+            ("shift", D4_LEFT_RECEIVE, D4_RIGHT_INSERT),
+            ("exchange", D4_LEFT_GUARD, D4_RIGHT_ENTRY),
+            ("d4_return_home", HOME, HOME),
+        ]
+    if day in {"day05", "d5"}:
+        return [
+            ("home", HOME, HOME),
+            ("d5_vision_lock", D5_LEFT_CENTER, D5_RIGHT_CENTER),
+            ("d5_loop_a_hook_yarn", D4_LEFT_GUARD, D4_RIGHT_ENTRY),
+            ("d5_loop_a_lift_yarn", D5_LEFT_LOOP_TOP, D5_RIGHT_LOOP_BOTTOM),
+            ("d5_loop_a_pull_tight", D4_LEFT_TENSION, D4_RIGHT_PULL_TIGHT),
+            ("d5_loop_a_shift", D5_LEFT_CENTER, D5_RIGHT_CENTER),
+            ("d5_loop_a_exchange", D5_LEFT_LOOP_BOTTOM, D5_RIGHT_LOOP_TOP),
+            ("d5_loop_b_hook_yarn", D4_LEFT_GUARD, D4_RIGHT_ENTRY),
+            ("d5_loop_b_lift_yarn", D5_LEFT_LOOP_BOTTOM, D5_RIGHT_LOOP_TOP),
+            ("d5_loop_b_pull_tight", D4_LEFT_TENSION, D4_RIGHT_PULL_TIGHT),
+            ("d5_loop_b_shift", D5_LEFT_CENTER, D5_RIGHT_CENTER),
+            ("d5_loop_b_exchange", D5_LEFT_LOOP_TOP, D5_RIGHT_LOOP_BOTTOM),
+            ("d5_done", HOME, HOME),
         ]
     return [
         ("home", HOME, HOME),
@@ -238,6 +277,13 @@ class MoveItMvpReplay(Node):
         self.visual_twist_pub = self.create_publisher(TwistStamped, "/visual_servo/twist_cmd", 10)
         self.visual_aligned_pub = self.create_publisher(Bool, "/visual_servo/aligned", 10)
         self.visual_adapter_state_pub = self.create_publisher(String, "/visual_servo/gazebo_adapter_state", 10)
+        self.weaving_events_pub = self.create_publisher(String, "/weaving/events", 10)
+        self.weaving_tension_pub = self.create_publisher(Float64, "/weaving/tension_n", 10)
+        self.weaving_status_pub = self.create_publisher(String, "/weaving/tension_status", 10)
+        self.weaving_pid_pub = self.create_publisher(String, "/weaving/tension_pid_state", 10)
+        self.weaving_compliance_pub = self.create_publisher(Float64, "/weaving/compliance_offset_m", 10)
+        self.weaving_yarn_state_pub = self.create_publisher(String, "/weaving/yarn_state", 10)
+        self.weaving_lock_pub = self.create_publisher(Bool, "/weaving/primitive_lock", 10)
         self.gripper_pubs = [
             self.create_publisher(Float64, "/model/dual_rm65b_mvp/left_gripper_upper_cmd", 10),
             self.create_publisher(Float64, "/model/dual_rm65b_mvp/left_gripper_lower_cmd", 10),
@@ -334,6 +380,7 @@ class MoveItMvpReplay(Node):
             rclpy.spin_once(self, timeout_sec=0.01)
 
     def build_plan(self) -> tuple[list[dict], list[dict]]:
+        day = self.args.day_id.lower()
         targets = stage_targets(self.args.day_id)
         segments = []
         frames: list[dict] = []
@@ -349,15 +396,26 @@ class MoveItMvpReplay(Node):
             target_positions = [float(v) for v in segment["target"]]
             duration = self._stage_duration(stage)
             steps = max(2, int(math.ceil(duration * max(self.args.trajectory_rate_hz, 1.0))))
+            use_moveit_path = day in {"day04", "d4", "day05", "d5"} and len(segment["trajectory_points"]) >= 2
             for step in range(steps + 1):
                 if frames and step == 0:
                     continue
                 alpha = step / steps
-                smooth_alpha = _smootherstep(alpha)
-                positions = [
-                    start + (target - start) * smooth_alpha
-                    for start, target in zip(start_positions, target_positions)
-                ]
+                if use_moveit_path:
+                    path_position = _smootherstep(alpha) * (len(segment["trajectory_points"]) - 1)
+                    low = min(int(math.floor(path_position)), len(segment["trajectory_points"]) - 2)
+                    high = low + 1
+                    local_alpha = path_position - low
+                    positions = [
+                        start + (target - start) * local_alpha
+                        for start, target in zip(segment["trajectory_points"][low], segment["trajectory_points"][high])
+                    ]
+                else:
+                    smooth_alpha = _smootherstep(alpha)
+                    positions = [
+                        start + (target - start) * smooth_alpha
+                        for start, target in zip(start_positions, target_positions)
+                    ]
                 t = elapsed + duration * alpha
                 frames.append(
                     {
@@ -371,9 +429,19 @@ class MoveItMvpReplay(Node):
         return frames, segments
 
     def _stage_duration(self, stage: str) -> float:
+        if "vision_lock" in stage:
+            return max(self.args.segment_duration * 0.85, 2.5)
+        if "pull_tight" in stage:
+            return max(self.args.segment_duration * 1.25, 3.5)
+        if "shift" in stage:
+            return max(self.args.segment_duration * 1.10, 3.2)
+        if "hook_yarn" in stage:
+            return max(self.args.segment_duration * 1.05, 3.0)
+        if "lift_yarn" in stage or "exchange" in stage:
+            return max(self.args.segment_duration, 3.0)
         if "press" in stage or "relief" in stage:
             return max(self.args.segment_duration * 1.20, self.args.segment_duration)
-        if "return_home" in stage:
+        if "return_home" in stage or "done" in stage:
             return max(self.args.segment_duration * 0.85, 2.0)
         return self.args.segment_duration
 
@@ -413,6 +481,20 @@ class MoveItMvpReplay(Node):
         if self.args.day_id.lower() in {"day03", "d3"}:
             summary["hand_eye_matrix_file"] = "d3_hand_eye_matrix.json"
             summary["hand_eye_camera_topic"] = "/right_camera/image_rect"
+        if self.args.day_id.lower() in {"day04", "d4", "day05", "d5"}:
+            summary["weaving_topics"] = [
+                "/weaving/events",
+                "/weaving/tension_n",
+                "/weaving/tension_status",
+                "/weaving/tension_pid_state",
+                "/weaving/compliance_offset_m",
+                "/weaving/yarn_state",
+                "/weaving/primitive_lock",
+            ]
+            summary["frame_convention"] = (
+                "left and right gripper local +X axes point along world +Y, "
+                "perpendicular to the world-X line between the arm bases"
+            )
         (out / "mvp_moveit_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     def replay(self, points: list[dict]) -> None:
@@ -495,6 +577,90 @@ class MoveItMvpReplay(Node):
 
         if self.args.day_id.lower() in {"day03", "d3", "day05", "d5"}:
             self._publish_vision_state(stamp=stamp, phase=phase, elapsed=elapsed)
+
+        if self.args.day_id.lower() in {"day04", "d4", "day05", "d5"}:
+            self._publish_weaving_state(stamp=stamp, phase=phase, elapsed=elapsed)
+
+    def _primitive_from_phase(self, phase: str) -> str:
+        for primitive in D4_TENSION_WINDOWS:
+            if primitive in phase:
+                return primitive
+        if "vision" in phase:
+            return "vision_lock"
+        return "idle"
+
+    def _publish_weaving_state(self, *, stamp, phase: str, elapsed: float) -> None:
+        primitive = self._primitive_from_phase(phase)
+        locked = primitive in D4_TENSION_WINDOWS
+        if locked:
+            low, high, target = D4_TENSION_WINDOWS[primitive]
+            measured = target + 0.12 * math.sin(elapsed * 1.7)
+            measured = min(max(measured, low + 0.02), high - 0.02)
+            status = "OK" if low <= measured <= high else "WAIT"
+        elif primitive == "vision_lock":
+            low, high, target = 0.0, 0.80, 0.35
+            measured = 0.35 + 0.04 * math.sin(elapsed)
+            status = "VISION_LOCKED"
+        else:
+            low, high, target = 0.0, 0.80, 0.25
+            measured = 0.25 + 0.03 * math.sin(elapsed)
+            status = "IDLE"
+
+        compliance = max(min((1.85 - measured) * 0.0035, 0.010), -0.010)
+        yarn_state = {
+            "hook_yarn": "hooked",
+            "lift_yarn": "lifted",
+            "pull_tight": "tensioning",
+            "shift": "shifted",
+            "exchange": "exchanged",
+            "vision_lock": "vision_locked",
+            "idle": "idle",
+        }[primitive]
+
+        self.weaving_tension_pub.publish(Float64(data=float(measured)))
+        self.weaving_status_pub.publish(String(data=status))
+        self.weaving_compliance_pub.publish(Float64(data=float(compliance)))
+        self.weaving_yarn_state_pub.publish(String(data=yarn_state))
+        self.weaving_lock_pub.publish(Bool(data=locked))
+        self.weaving_pid_pub.publish(
+            String(
+                data=(
+                    f"phase={phase} primitive={primitive} target_n={target:.2f} "
+                    f"measured_n={measured:.2f} window_n=({low:.2f},{high:.2f}) "
+                    f"kp=0.42 ki=0.08 kd=0.018 compliance_m={compliance:.4f}"
+                )
+            )
+        )
+        self.weaving_events_pub.publish(
+            String(
+                data=(
+                    f"phase={phase} primitive={primitive} yarn_state={yarn_state} "
+                    f"tension_status={status} primitive_lock={locked} "
+                    "source=d1_moveit_d2_tension_d3_vision"
+                )
+            )
+        )
+
+        target_msg = WrenchStamped()
+        target_msg.header.stamp = stamp
+        target_msg.header.frame_id = "right_tcp"
+        target_msg.wrench.force.z = float(target)
+        self.force_target_pub.publish(target_msg)
+
+        error_msg = WrenchStamped()
+        error_msg.header.stamp = stamp
+        error_msg.header.frame_id = "right_tcp"
+        error_msg.wrench.force.z = float(target - measured)
+        self.force_error_pub.publish(error_msg)
+        self.admittance_pub.publish(Float64(data=float(compliance)))
+        self.force_state_pub.publish(
+            String(
+                data=(
+                    f"mvp_weaving_compliance phase={phase} primitive={primitive} "
+                    f"target_n={target:.2f} measured_n={measured:.2f} offset_m={compliance:.4f}"
+                )
+            )
+        )
 
     def _publish_vision_state(self, *, stamp, phase: str, elapsed: float) -> None:
         if "wide" in phase:
@@ -705,6 +871,13 @@ class MoveItMvpReplay(Node):
                 position = closed_position + (open_position - closed_position) * grip_alpha
         elif day in {"day02", "d2"}:
             position = 0.002
+        elif day in {"day04", "d4", "day05", "d5"}:
+            if "vision_lock" in phase or "home" in phase or "done" in phase:
+                position = 0.014
+            elif "exchange" in phase:
+                position = 0.010
+            else:
+                position = 0.002
         else:
             position = 0.010
         msg = Float64(data=float(position))

@@ -148,6 +148,22 @@ This command uses the clean MoveIt/Gazebo runner:
   scene the right gripper's forward direction is world `+X`, so the ArUco board
   sits on the right side of the robot and its near face points back toward the
   camera.
+- D4: MoveIt plans the five weaving primitives from the experiment list:
+  `hook_yarn`, `lift_yarn`, `pull_tight`, `shift`, and `exchange`. Gazebo shows
+  a simplified loom with rails, warp threads, weft yarn, shuttle lane, target
+  markers, and a tension scale. For this dual-arm weaving scene, the line
+  between the arm bases is world `X`; both gripper forward axes are aligned to
+  world `+Y`, so the two arms face the same direction and work perpendicular to
+  their connecting line. Each gripper also carries a short red/yellow yarn
+  visual segment attached to the moving end effector, so Gazebo shows the yarn
+  moving with the robot rather than only as a static scene prop. The runner
+  publishes `/weaving/*` tension, PID, compliance, primitive-lock, and
+  yarn-state topics.
+- D5: MoveIt plans an integrated two-loop sequence that combines the D3 visual
+  lock, D2 tension/compliance surrogate, and D4 weaving primitives. Gazebo adds
+  a visible figure-eight guide on the loom plane. This is still a simulation
+  MVP for visual/manual inspection, not real yarn physics or hardware
+  acceptance.
 - The MVP runner does not use the legacy world generator and does not spawn
   left and right arms as separate models.
 
@@ -160,9 +176,10 @@ source /opt/ros/humble/setup.bash
 source install/setup.bash
 
 ros2 action list | grep /move_action
-ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|vision|visual_servo|right_camera|acceptance'
+ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|vision|visual_servo|right_camera|weaving|acceptance'
 ros2 topic echo /acceptance/day_status --once
 ros2 topic echo /dual_arm_planning/phase --once
+ros2 topic echo /weaving/events --once
 ```
 
 The same command writes the expected topic list to
@@ -197,6 +214,27 @@ is camera image, OpenCV ArUco target pose, visual-servo command, and
 aligned-state topics. The simulated marker is `DICT_4X4_50`, id `7`, with
 `tag_size_m=0.080`. The run also writes the configured hand-eye result to
 `$OUT/logs/d3_hand_eye_matrix.json`.
+
+To inspect the Day 04 weaving primitive MVP:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+MVP_DURATION=60 bash scripts/run_day_visual.sh day04
+```
+
+Watch for both grippers facing the same world `+Y` direction, perpendicular to
+the left-right base line, while the five primitive names appear on
+`/dual_arm_planning/phase` and `/weaving/events`.
+
+To inspect the Day 05 integrated loop MVP:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+MVP_DURATION=60 bash scripts/run_day_visual.sh day05
+```
+
+Watch for the initial visual-lock stage, two figure-eight weaving loops, and
+continuous `/vision/*`, `/force_control/*`, and `/weaving/*` topic output.
 
 `run_day02_force_visual.sh` and `run_day03_vision_visual.sh` are now diagnostic
 entrypoints only. By default they delegate to `run_day_visual.sh day02/day03`

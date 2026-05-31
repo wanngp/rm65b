@@ -126,12 +126,21 @@ d3_twist_cmd=/visual_servo/twist_cmd
 d3_aligned=/visual_servo/aligned
 d3_adapter_state=/visual_servo/gazebo_adapter_state
 d3_marker=DICT_4X4_50 id=7 tag_size_m=0.080
+d4_weaving_events=/weaving/events
+d4_tension_n=/weaving/tension_n
+d4_tension_status=/weaving/tension_status
+d4_tension_pid_state=/weaving/tension_pid_state
+d4_compliance_offset=/weaving/compliance_offset_m
+d4_yarn_state=/weaving/yarn_state
+d4_primitive_lock=/weaving/primitive_lock
+d5_integrated_loop=/weaving/events
 
 Quick checks while the visual run is active:
 ros2 action list | grep /move_action
-ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|vision|visual_servo|right_camera|acceptance'
+ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|vision|visual_servo|right_camera|weaving|acceptance'
 ros2 topic echo /acceptance/day_status --once
 ros2 topic echo /dual_arm_planning/phase --once
+ros2 topic echo /weaving/events --once
 EOF
 echo "topic_contract=$OUT_DIR/logs/day_topic_contract.txt"
 
