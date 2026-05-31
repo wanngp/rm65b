@@ -149,21 +149,24 @@ This command uses the clean MoveIt/Gazebo runner:
   sits on the right side of the robot and its near face points back toward the
   camera.
 - D4: MoveIt plans the five weaving primitives from the experiment list:
-  `hook_yarn`, `lift_yarn`, `pull_tight`, `shift`, and `exchange`. Gazebo shows
-  a simplified loom with rails, warp threads, weft yarn, shuttle lane, target
-  markers, and a tension scale. For this dual-arm weaving scene, the line
-  between the arm bases is world `X`; both gripper forward axes are aligned to
-  world `+Y`, so the two arms face the same direction and work perpendicular to
-  their connecting line. Each gripper also carries a short red/yellow yarn
-  visual segment attached to the moving end effector, so Gazebo shows the yarn
-  moving with the robot rather than only as a static scene prop. The runner
-  publishes `/weaving/*` tension, PID, compliance, primitive-lock, and
-  yarn-state topics.
+  `hook_yarn`, `lift_yarn`, `pull_tight`, `shift`, and `exchange`. For this
+  dual-arm weaving scene, the line between the arm bases is world `X`; both
+  gripper forward axes are aligned to world `+Y`, so the two arms face the same
+  direction and work perpendicular to their connecting line. The scene
+  background is intentionally reduced to a black Tian-shaped field frame with a
+  32-link red segmented rigid-body yarn chain. The chain starts loosely wrapped
+  around the center post, with a bright green right-end handle and a bright blue
+  left-end handle. During D4/D5 visual runs, the runner builds the local
+  `RuntimeLinkAttacher` Gazebo system and uses fixed `DetachableJoint`
+  attachments before playback starts: the right chain end is pinned to the
+  right gripper, the left chain end is pinned to the left gripper, and the
+  middle chain segment is pinned to the center post. The runner publishes
+  `/weaving/*` tension, PID, compliance, primitive-lock, and yarn-state topics.
 - D5: MoveIt plans an integrated two-loop sequence that combines the D3 visual
-  lock, D2 tension/compliance surrogate, and D4 weaving primitives. Gazebo adds
-  a visible figure-eight guide on the loom plane. This is still a simulation
-  MVP for visual/manual inspection, not real yarn physics or hardware
-  acceptance.
+  lock, D2 tension/compliance surrogate, and D4 weaving primitives. Gazebo uses
+  the same simplified Tian-frame and pickup-chain scene. This is still a
+  simulation MVP for visual/manual inspection, not real yarn physics or
+  hardware acceptance.
 - The MVP runner does not use the legacy world generator and does not spawn
   left and right arms as separate models.
 

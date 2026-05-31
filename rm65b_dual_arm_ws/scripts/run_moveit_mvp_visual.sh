@@ -80,6 +80,9 @@ fi
 DUAL_URDF_RUNTIME="$OUT_DIR/logs/rm65b_dual_arm_mvp_file_meshes.urdf"
 DUAL_MODEL_SDF="$OUT_DIR/logs/rm65b_dual_arm_mvp_model.sdf"
 WORLD_RUNTIME="$OUT_DIR/logs/rm65b_dual_arm_mvp_world.sdf"
+RUNTIME_LINK_ATTACHER_SOURCE="$SCRIPT_DIR/rm65b_runtime_link_attacher.cc"
+RUNTIME_LINK_ATTACHER_SO="$OUT_DIR/logs/librm65b_runtime_link_attacher.so"
+ENABLE_RUNTIME_ATTACH=0
 
 sed "s#package://rm_description/meshes#file://$MESH_ROOT#g" "$DUAL_URDF" > "$DUAL_URDF_RUNTIME"
 gz sdf -p "$DUAL_URDF_RUNTIME" > "$DUAL_MODEL_SDF"
@@ -87,6 +90,57 @@ python3 "$SCRIPT_DIR/generate_moveit_mvp_gazebo_world.py" \
   --model-sdf "$DUAL_MODEL_SDF" \
   --day-id "$DAY_ID" \
   --output "$WORLD_RUNTIME"
+
+if [[ "$DAY_ID" == "day04" || "$DAY_ID" == "day05" ]]; then
+  if command -v g++ >/dev/null 2>&1 && pkg-config --exists gz-sim8 gz-plugin2 gz-transport13 gz-msgs10; then
+    g++ -std=c++17 -fPIC -shared "$RUNTIME_LINK_ATTACHER_SOURCE" \
+      -o "$RUNTIME_LINK_ATTACHER_SO" \
+      $(pkg-config --cflags --libs gz-sim8 gz-plugin2 gz-transport13 gz-msgs10) \
+      > "$OUT_DIR/logs/runtime_link_attacher_build.log" 2>&1
+    python3 - "$WORLD_RUNTIME" "$RUNTIME_LINK_ATTACHER_SO" "$DAY_ID" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+world_file, plugin_so, day_id = sys.argv[1:4]
+prefix = "d4" if day_id == "day04" else "d5"
+tree = ET.parse(world_file)
+root = tree.getroot()
+world = root.find("world")
+if world is None:
+    raise SystemExit("runtime SDF has no world")
+
+plugin = ET.Element("plugin", {"filename": plugin_so, "name": "rm65b::RuntimeLinkAttacher"})
+
+
+def text(parent, tag, value):
+    elem = ET.SubElement(parent, tag)
+    elem.text = value
+    return elem
+
+
+def attachment(name, parent, child):
+    elem = ET.SubElement(plugin, "attachment")
+    text(elem, "name", name)
+    text(elem, "parent_link", parent)
+    text(elem, "child_link", child)
+    text(elem, "attach_topic", f"/rm65b/physical/{name}/attach")
+    text(elem, "detach_topic", f"/rm65b/physical/{name}/detach")
+    text(elem, "output_topic", f"/rm65b/physical/{name}/state")
+
+
+chain = f"{prefix}_pickup_yarn_chain"
+attachment(f"{prefix}_right_chain_end", "dual_rm65b_mvp::right_attached_scaled_gripper", f"{chain}::yarn_link_00")
+attachment(f"{prefix}_left_chain_end", "dual_rm65b_mvp::left_attached_scaled_gripper", f"{chain}::yarn_link_31")
+attachment(f"{prefix}_center_chain_post", f"{prefix}_field_frame_mid_vertical::link", f"{chain}::yarn_link_15")
+world.append(plugin)
+tree.write(world_file, encoding="unicode", xml_declaration=True)
+PY
+    ENABLE_RUNTIME_ATTACH=1
+  else
+    echo "Runtime link attacher skipped: missing g++ or Gazebo pkg-config deps." \
+      > "$OUT_DIR/logs/runtime_link_attacher_build.log"
+  fi
+fi
 
 echo "workspace=$WORKSPACE"
 echo "day=$DAY_ID"
@@ -133,7 +187,13 @@ d4_tension_pid_state=/weaving/tension_pid_state
 d4_compliance_offset=/weaving/compliance_offset_m
 d4_yarn_state=/weaving/yarn_state
 d4_primitive_lock=/weaving/primitive_lock
+d4_right_chain_attach=/rm65b/physical/d4_right_chain_end/state
+d4_left_chain_attach=/rm65b/physical/d4_left_chain_end/state
+d4_center_chain_attach=/rm65b/physical/d4_center_chain_post/state
 d5_integrated_loop=/weaving/events
+d5_right_chain_attach=/rm65b/physical/d5_right_chain_end/state
+d5_left_chain_attach=/rm65b/physical/d5_left_chain_end/state
+d5_center_chain_attach=/rm65b/physical/d5_center_chain_post/state
 
 Quick checks while the visual run is active:
 ros2 action list | grep /move_action
@@ -185,6 +245,18 @@ if [[ "$OPEN_RVIZ" == "1" && ( -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ) 
 fi
 
 sleep "$START_DELAY"
+
+if [[ "$ENABLE_RUNTIME_ATTACH" == "1" ]]; then
+  prefix="d4"
+  if [[ "$DAY_ID" == "day05" ]]; then
+    prefix="d5"
+  fi
+  for target in right_chain_end left_chain_end center_chain_post; do
+    gz topic -t "/rm65b/physical/${prefix}_${target}/attach" -m gz.msgs.Empty -p "" -d 0.2 \
+      >> "$OUT_DIR/logs/runtime_link_attacher_trigger.log" 2>&1 || true
+  done
+  sleep 0.5
+fi
 
 python3 "$SCRIPT_DIR/moveit_mvp_visual_replay.py" \
   --day-id "$DAY_ID" \
