@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import math
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -305,6 +304,27 @@ def add_eye_in_hand_camera(model: ET.Element, side: str) -> None:
     text(joint, "child", f"{side}_mvp_eye_in_hand_camera")
 
 
+def add_attached_yarn_endpoint(model: ET.Element, side: str, color: str) -> None:
+    parent_link = f"{side}_attached_scaled_gripper"
+    if model.find(f"link[@name='{parent_link}']") is None:
+        parent_link = f"{side}_Link6"
+    if model.find(f"link[@name='{parent_link}']") is None:
+        return
+
+    endpoint_name = f"{side}_mvp_attached_yarn_endpoint"
+    endpoint = ET.SubElement(model, "link", {"name": endpoint_name})
+    pose = text(endpoint, "pose", "0.105 0 0 0 0 0")
+    pose.set("relative_to", parent_link)
+    text(endpoint, "gravity", "false")
+    add_inertial(endpoint, "0.01")
+    add_visual_box(endpoint, "moving_yarn_tail", "0.130 0.014 0.014", color, "0.030 0 0 0 0 0")
+    add_visual_box(endpoint, "bright_grasp_tip", "0.038 0.038 0.038", "1.00 0.92 0.05 1", "0.105 0 0 0 0 0")
+
+    joint = ET.SubElement(model, "joint", {"name": f"{side}_mvp_attached_yarn_endpoint_fixed", "type": "fixed"})
+    text(joint, "parent", parent_link)
+    text(joint, "child", endpoint_name)
+
+
 def add_controller(model: ET.Element) -> None:
     plugin = ET.SubElement(
         model,
@@ -356,107 +376,16 @@ def load_model(model_sdf: Path, day_id: str) -> ET.Element:
         add_held_contact_block(model, "right")
     if day in {"day03", "d3", "day04", "d4", "day05", "d5"}:
         add_eye_in_hand_camera(model, "right")
+    if day in {"day04", "d4", "day05", "d5"}:
+        add_attached_yarn_endpoint(model, "left", "0.05 0.65 1.00 1")
+        add_attached_yarn_endpoint(model, "right", "0.95 0.05 0.04 1")
     return model
 
 
-def add_pickup_yarn_chain(world: ET.Element, prefix: str) -> None:
-    model = ET.SubElement(world, "model", {"name": f"{prefix}_pickup_yarn_chain"})
-    text(model, "pose", "0 0 0 0 0 0")
-    text(model, "static", "false")
-    text(model, "self_collide", "false")
-
-    # Thirty-two short rigid links are initialized as a loose wrap around the
-    # center post; Gazebo joints then provide semi-flexible motion.
-    chain_points = [
-        (0.450, 0.115, 0.737),
-        (0.430, 0.160, 0.715),
-        (0.390, 0.205, 0.690),
-        (0.330, 0.250, 0.665),
-        (0.250, 0.300, 0.635),
-        (0.160, 0.340, 0.605),
-        (0.070, 0.360, 0.575),
-        (0.000, 0.360, 0.555),
-        (-0.065, 0.360, 0.570),
-        (-0.105, 0.360, 0.615),
-        (-0.095, 0.360, 0.665),
-        (-0.045, 0.360, 0.705),
-        (0.025, 0.360, 0.710),
-        (0.085, 0.360, 0.675),
-        (0.105, 0.360, 0.620),
-        (0.075, 0.360, 0.575),
-        (0.010, 0.360, 0.555),
-        (-0.060, 0.360, 0.575),
-        (-0.100, 0.360, 0.625),
-        (-0.085, 0.360, 0.675),
-        (-0.035, 0.360, 0.705),
-        (0.020, 0.360, 0.690),
-        (0.045, 0.360, 0.635),
-        (0.020, 0.350, 0.590),
-        (-0.055, 0.335, 0.600),
-        (-0.135, 0.305, 0.620),
-        (-0.220, 0.260, 0.650),
-        (-0.300, 0.210, 0.680),
-        (-0.370, 0.155, 0.710),
-        (-0.420, 0.085, 0.730),
-        (-0.455, 0.015, 0.740),
-        (-0.465, -0.060, 0.735),
-        (-0.450, -0.115, 0.737),
-    ]
-    for idx, (start, end) in enumerate(zip(chain_points[:-1], chain_points[1:])):
-        sx, sy, sz = start
-        ex, ey, ez = end
-        dx = ex - sx
-        dy = ey - sy
-        dz = ez - sz
-        length = (dx * dx + dy * dy + dz * dz) ** 0.5
-        yaw = math.atan2(dy, dx)
-        pitch = math.atan2(-dz, (dx * dx + dy * dy) ** 0.5)
-        link_name = f"yarn_link_{idx:02d}"
-        link = ET.SubElement(model, "link", {"name": link_name})
-        text(
-            link,
-            "pose",
-            f"{(sx + ex) / 2.0:.3f} {(sy + ey) / 2.0:.3f} {(sz + ez) / 2.0:.3f} 0 {pitch:.4f} {yaw:.4f}",
-        )
-        text(link, "gravity", "true")
-        text(link, "self_collide", "false")
-        add_inertial(link, "0.010")
-        add_visual_box(link, "yarn_segment", f"{length:.3f} 0.016 0.016", "0.86 0.06 0.04 1", collision=True)
-        if idx == 0:
-            add_visual_box(
-                link,
-                "right_bright_grasp_handle",
-                "0.055 0.055 0.055",
-                "0.05 1.00 0.28 1",
-                f"{-length / 2.0:.3f} 0 0.010 0 0 0",
-                collision=True,
-            )
-        if idx == len(chain_points) - 2:
-            add_visual_box(
-                link,
-                "left_bright_grasp_handle",
-                "0.050 0.050 0.050",
-                "0.05 0.65 1.00 1",
-                f"{length / 2.0:.3f} 0 0 0 0 0",
-                collision=True,
-            )
-
-    for idx, hinge in enumerate(chain_points[1:-1], start=1):
-        joint = ET.SubElement(model, "joint", {"name": f"yarn_joint_{idx:02d}", "type": "revolute"})
-        parent_link = f"yarn_link_{idx - 1:02d}"
-        text(joint, "parent", parent_link)
-        text(joint, "child", f"yarn_link_{idx:02d}")
-        text(joint, "pose", f"{hinge[0]:.3f} {hinge[1]:.3f} {hinge[2]:.3f} 0 0 0")
-        axis = ET.SubElement(joint, "axis")
-        text(axis, "xyz", "0 1 0" if idx % 2 == 0 else "0 0 1")
-        limit = ET.SubElement(axis, "limit")
-        text(limit, "lower", "-1.05")
-        text(limit, "upper", "1.05")
-        text(limit, "effort", "0.35")
-        text(limit, "velocity", "2.0")
-        dynamics = ET.SubElement(axis, "dynamics")
-        text(dynamics, "damping", "0.12")
-        text(dynamics, "friction", "0.03")
+def add_weaving_reference_markers(world: ET.Element, prefix: str) -> None:
+    add_box_model(world, f"{prefix}_right_pickup_site_marker", "0.450 0.115 0.737 0 0 0", "0.040 0.040 0.040", "0.75 0.75 0.75 0.45", collision=False)
+    add_box_model(world, f"{prefix}_left_pickup_site_marker", "-0.450 -0.115 0.737 0 0 0", "0.040 0.040 0.040", "0.75 0.75 0.75 0.45", collision=False)
+    add_box_model(world, f"{prefix}_center_wrap_marker", "0 0.360 0.620 0 0 0", "0.070 0.070 0.070", "1.00 0.82 0.05 1", collision=False)
 
 
 def add_weaving_mvp_scene(world: ET.Element, prefix: str) -> None:
@@ -467,7 +396,7 @@ def add_weaving_mvp_scene(world: ET.Element, prefix: str) -> None:
     add_box_model(world, f"{prefix}_field_frame_right", "0.540 0.360 0.600 0 0 0", "0.030 0.030 0.310", frame_color)
     add_box_model(world, f"{prefix}_field_frame_mid_vertical", "0 0.360 0.600 0 0 0", "0.026 0.026 0.310", frame_color)
     add_box_model(world, f"{prefix}_field_frame_mid_horizontal", "0 0.360 0.600 0 0 0", "1.080 0.026 0.026", frame_color, collision=False)
-    add_pickup_yarn_chain(world, prefix)
+    add_weaving_reference_markers(world, prefix)
 
 
 def add_figure_eight_markers(world: ET.Element, prefix: str) -> None:

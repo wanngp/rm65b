@@ -153,18 +153,16 @@ This command uses the clean MoveIt/Gazebo runner:
   dual-arm weaving scene, the line between the arm bases is world `X`; both
   gripper forward axes are aligned to world `+Y`, so the two arms face the same
   direction and work perpendicular to their connecting line. The scene
-  background is intentionally reduced to a black Tian-shaped field frame with a
-  32-link red segmented rigid-body yarn chain. The chain starts loosely wrapped
-  around the center post, with a bright green right-end handle and a bright blue
-  left-end handle. During D4/D5 visual runs, the runner builds the local
-  `RuntimeLinkAttacher` Gazebo system and uses fixed `DetachableJoint`
-  attachments before playback starts: the right chain end is pinned to the
-  right gripper, the left chain end is pinned to the left gripper, and the
-  middle chain segment is pinned to the center post. The runner publishes
+  background is intentionally reduced to a black Tian-shaped field frame with
+  only muted pickup-site markers and a bright center wrap marker. Bright yarn
+  endpoint stubs are fixed to the left and right gripper tips so the visible
+  grasp points move with the arms. No dynamic rope, static chain, or static
+  trajectory support lines are spawned by default; this keeps the Gazebo view
+  stable and avoids showing a non-moving yarn object. The runner publishes
   `/weaving/*` tension, PID, compliance, primitive-lock, and yarn-state topics.
 - D5: MoveIt plans an integrated two-loop sequence that combines the D3 visual
   lock, D2 tension/compliance surrogate, and D4 weaving primitives. Gazebo uses
-  the same simplified Tian-frame and pickup-chain scene. This is still a
+  the same simplified Tian-frame and trajectory-overlay scene. This is still a
   simulation MVP for visual/manual inspection, not real yarn physics or
   hardware acceptance.
 - The MVP runner does not use the legacy world generator and does not spawn
