@@ -596,7 +596,7 @@ fi
   command -v gz
   command -v rviz2 || true
   command -v ffmpeg || true
-  (gz sim --version || gz sim --versions || gz --versions || true)
+  echo "gz_cli=available"
 } | tee "$OUT_DIR/logs/harmonic_planned_env.log"
 
 PIDS=()
