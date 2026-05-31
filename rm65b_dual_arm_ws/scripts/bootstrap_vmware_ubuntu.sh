@@ -140,6 +140,41 @@ apt_package_available() {
   apt-cache show "$1" >/dev/null 2>&1
 }
 
+path_is_ascii() {
+  LC_ALL=C grep -q '^[[:print:]]*$' <<<"$1"
+}
+
+require_ascii_workspace_for_build() {
+  if path_is_ascii "$WORKSPACE"; then
+    return 0
+  fi
+
+  cat >&2 <<EOF
+[FAIL] Cannot run a full colcon build from a non-ASCII workspace path:
+  $WORKSPACE
+
+The official RealMan rm_ros_interfaces package can fail inside rosidl with:
+  Target dependency '/mnt/e/1-' does not exist
+
+Build from an ASCII-only Ubuntu path instead. Example:
+
+  sudo apt-get update && sudo apt-get install -y rsync
+  mkdir -p "\$HOME/rm65b_dual_arm_ws"
+  rsync -a --delete \\
+    --exclude build --exclude install --exclude log --exclude outputs \\
+    --exclude src/ros2_rm_robot \\
+    "$WORKSPACE/" "\$HOME/rm65b_dual_arm_ws/"
+  cd "\$HOME/rm65b_dual_arm_ws"
+  bash scripts/bootstrap_vmware_ubuntu.sh \\
+    --official-source-dir "$TARGET_DIR" \\
+    --all
+
+After the build:
+  source "\$HOME/rm65b_dual_arm_ws/install/setup.bash"
+EOF
+  exit 1
+}
+
 missing_paths() {
   local base="$1"
   shift
@@ -386,6 +421,7 @@ install_apt_deps_if_requested() {
     python3-opencv
     python3-pip
     python3-yaml
+    rsync
     unzip
     wget
     x11-utils
@@ -564,6 +600,7 @@ run_build_if_requested() {
   fi
   [[ -f /opt/ros/humble/setup.bash ]] || die "Cannot build because /opt/ros/humble/setup.bash is missing."
   have_cmd colcon || die "Cannot build because colcon is missing."
+  require_ascii_workspace_for_build
 
   log INFO "Building workspace."
   (
