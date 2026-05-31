@@ -140,6 +140,14 @@ This command uses the clean MoveIt/Gazebo runner:
   the gripper-front direction defined by the right arm's initial pose, pushing
   that block into the front-aligned wall instead of driving the gripper fingers
   directly into the obstacle.
+- D3: MoveIt plans right-arm hand-eye viewpoints only: wide view, visual align,
+  calibration lock, and retract. The MVP runner does not add physical touch to
+  D3; it publishes synthetic `/right_camera/*`, `/vision/*`, and
+  `/visual_servo/*` signals while Gazebo shows the eye-in-hand camera and
+  a front-facing 80 mm `DICT_4X4_50` ArUco tag with marker id 7. In this D3
+  scene the right gripper's forward direction is world `+X`, so the ArUco board
+  sits on the right side of the robot and its near face points back toward the
+  camera.
 - The MVP runner does not use the legacy world generator and does not spawn
   left and right arms as separate models.
 
@@ -152,7 +160,7 @@ source /opt/ros/humble/setup.bash
 source install/setup.bash
 
 ros2 action list | grep /move_action
-ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|acceptance'
+ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|vision|visual_servo|right_camera|acceptance'
 ros2 topic echo /acceptance/day_status --once
 ros2 topic echo /dual_arm_planning/phase --once
 ```
@@ -181,8 +189,14 @@ bash scripts/run_day_visual.sh day03
 ```
 
 In the MVP branch Day 03 uses the same single Gazebo dual-arm model with a
-custom vision-board scene while MoveIt plans the camera-view, align, touch, and
-retract stages.
+custom ArUco calibration-board scene while MoveIt plans hand-eye camera
+viewpoints, visual alignment, calibration lock, and retract stages for the
+right arm. The board is placed in the right-arm forward direction, which is
+world `+X` for this scene. D3 intentionally avoids contact; the evidence path
+is camera image, OpenCV ArUco target pose, visual-servo command, and
+aligned-state topics. The simulated marker is `DICT_4X4_50`, id `7`, with
+`tag_size_m=0.080`. The run also writes the configured hand-eye result to
+`$OUT/logs/d3_hand_eye_matrix.json`.
 
 `run_day02_force_visual.sh` and `run_day03_vision_visual.sh` are now diagnostic
 entrypoints only. By default they delegate to `run_day_visual.sh day02/day03`

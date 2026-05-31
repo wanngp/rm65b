@@ -7,6 +7,14 @@ from pathlib import Path
 
 
 DUAL_JOINTS = [f"{side}_joint{i}" for side in ("left", "right") for i in range(1, 7)]
+ARUCO_4X4_50_ID7 = (
+    (0, 0, 0, 0, 0, 0),
+    (0, 1, 1, 0, 0, 0),
+    (0, 0, 1, 0, 0, 0),
+    (0, 1, 1, 1, 1, 0),
+    (0, 0, 0, 1, 0, 0),
+    (0, 0, 0, 0, 0, 0),
+)
 HOME = {
     "left_joint1": 0.0,
     "left_joint2": -0.35,
@@ -85,6 +93,58 @@ def add_marker_cylinder(world: ET.Element, name: str, pose: str, radius: str, le
     material = ET.SubElement(visual, "material")
     text(material, "ambient", color)
     text(material, "diffuse", color)
+
+
+def add_aruco_marker_y_plane(
+    world: ET.Element,
+    *,
+    name_prefix: str,
+    center_x: float,
+    face_y: float,
+    center_z: float,
+    marker_size_m: float = 0.080,
+) -> None:
+    cell = marker_size_m / 6.0
+    for row, values in enumerate(ARUCO_4X4_50_ID7):
+        for col, value in enumerate(values):
+            if value:
+                continue
+            x = center_x + (col - 2.5) * cell
+            z = center_z + (2.5 - row) * cell
+            add_box_model(
+                world,
+                f"{name_prefix}_black_{row}_{col}",
+                f"{x:.4f} {face_y:.4f} {z:.4f} 0 0 0",
+                f"{cell:.4f} 0.004 {cell:.4f}",
+                "0.01 0.01 0.01 1",
+                collision=False,
+            )
+
+
+def add_aruco_marker_x_plane(
+    world: ET.Element,
+    *,
+    name_prefix: str,
+    face_x: float,
+    center_y: float,
+    center_z: float,
+    marker_size_m: float = 0.080,
+) -> None:
+    cell = marker_size_m / 6.0
+    for row, values in enumerate(ARUCO_4X4_50_ID7):
+        for col, value in enumerate(values):
+            if value:
+                continue
+            y = center_y + (col - 2.5) * cell
+            z = center_z + (2.5 - row) * cell
+            add_box_model(
+                world,
+                f"{name_prefix}_black_{row}_{col}",
+                f"{face_x:.4f} {y:.4f} {z:.4f} 0 0 0",
+                f"0.004 {cell:.4f} {cell:.4f}",
+                "0.01 0.01 0.01 1",
+                collision=False,
+            )
 
 
 def add_inertial(parent: ET.Element, mass: str = "0.025") -> None:
@@ -214,6 +274,27 @@ def add_held_contact_block(model: ET.Element, side: str) -> None:
     text(joint, "child", f"{side}_mvp_held_contact_block")
 
 
+def add_eye_in_hand_camera(model: ET.Element, side: str) -> None:
+    parent_link = f"{side}_attached_scaled_gripper"
+    if model.find(f"link[@name='{parent_link}']") is None:
+        parent_link = f"{side}_Link6"
+    if model.find(f"link[@name='{parent_link}']") is None:
+        return
+
+    camera = ET.SubElement(model, "link", {"name": f"{side}_mvp_eye_in_hand_camera"})
+    pose = text(camera, "pose", "0.064 0 0.045 0 0.35 0")
+    pose.set("relative_to", parent_link)
+    text(camera, "gravity", "false")
+    add_inertial(camera, "0.04")
+    add_visual_box(camera, "camera_body", "0.045 0.032 0.026", "0.06 0.16 0.30 1")
+    add_visual_box(camera, "camera_lens", "0.014 0.022 0.022", "0.02 0.02 0.025 1", "0.028 0 0 0 0 0")
+    add_visual_box(camera, "view_frustum", "0.090 0.080 0.006", "0.20 0.65 1.00 0.28", "0.088 0 0 0 0 0")
+
+    joint = ET.SubElement(model, "joint", {"name": f"{side}_mvp_eye_in_hand_camera_fixed", "type": "fixed"})
+    text(joint, "parent", parent_link)
+    text(joint, "child", f"{side}_mvp_eye_in_hand_camera")
+
+
 def add_controller(model: ET.Element) -> None:
     plugin = ET.SubElement(
         model,
@@ -260,8 +341,13 @@ def load_model(model_sdf: Path, day_id: str) -> ET.Element:
     add_controller(model)
     add_movable_gripper(model, "left", "0.05 0.10 0.95 1")
     add_movable_gripper(model, "right", "0.95 0.16 0.08 1")
-    if day_id.lower() in {"day02", "d2"}:
+    day = day_id.lower()
+    if day in {"day02", "d2"}:
         add_held_contact_block(model, "right")
+    if day in {"day03", "d3"}:
+        add_eye_in_hand_camera(model, "right")
+    if day in {"day05", "d5"}:
+        add_eye_in_hand_camera(model, "left")
     return model
 
 
@@ -283,8 +369,17 @@ def add_day_scene(world: ET.Element, day_id: str) -> None:
         add_box_model(world, "d2_probe_path_marker", f"0.450 0.184 0.555 {front_aligned_pose}", "0.170 0.018 0.018", "0.96 0.78 0.16 0.65", collision=False)
         add_box_model(world, "d2_relief_window", f"0.450 0.198 0.520 {front_aligned_pose}", "0.080 0.26 0.018", "0.10 0.85 0.35 0.55", collision=False)
     elif day in {"day03", "d3"}:
-        add_box_model(world, "d3_vision_board", "-0.34 0.38 0.68 0 0 0", "0.34 0.035 0.30", "0.05 0.09 0.12 1")
-        add_box_model(world, "d3_green_target", "-0.34 0.35 0.70 0 0 0", "0.10 0.018 0.10", "0.05 0.95 0.25 1")
+        add_box_model(world, "d3_calibration_board", "0.860 0.150 0.590 0 0 0", "0.025 0.220 0.220", "0.96 0.96 0.92 1", collision=False)
+        add_aruco_marker_x_plane(
+            world,
+            name_prefix="d3_aruco_4x4_50_id7",
+            face_x=0.846,
+            center_y=0.150,
+            center_z=0.590,
+            marker_size_m=0.080,
+        )
+        add_box_model(world, "d3_board_size_reference_y", "0.843 0.150 0.715 0 0 0", "0.004 0.080 0.010", "0.20 0.65 1.00 0.70", collision=False)
+        add_box_model(world, "d3_camera_alignment_lane", "0.685 0.150 0.660 0 0 0", "0.300 0.018 0.018", "0.20 0.65 1.00 0.55", collision=False)
     elif day in {"day04", "d4"}:
         add_box_model(world, "d4_upper_loom_rail", "0 0.36 0.74 0 0 0", "1.00 0.035 0.035", "0.78 0.64 0.20 1")
         add_box_model(world, "d4_lower_loom_rail", "0 0.36 0.46 0 0 0", "1.00 0.035 0.035", "0.78 0.64 0.20 1")

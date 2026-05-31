@@ -116,10 +116,20 @@ d2_force_state=/force_control/state
 d2_force_target=/force_control/target_wrench
 d2_force_error=/force_control/wrench_error
 d2_admittance=/force_control/admittance_offset
+d3_camera_image=/right_camera/image_rect
+d3_camera_info=/right_camera/camera_info
+d3_debug_image=/vision/debug_image
+d3_target_pose=/vision/target_pose
+d3_status=/vision/status
+d3_metrics=/vision/metrics
+d3_twist_cmd=/visual_servo/twist_cmd
+d3_aligned=/visual_servo/aligned
+d3_adapter_state=/visual_servo/gazebo_adapter_state
+d3_marker=DICT_4X4_50 id=7 tag_size_m=0.080
 
 Quick checks while the visual run is active:
 ros2 action list | grep /move_action
-ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|acceptance'
+ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|vision|visual_servo|right_camera|acceptance'
 ros2 topic echo /acceptance/day_status --once
 ros2 topic echo /dual_arm_planning/phase --once
 EOF
@@ -173,6 +183,16 @@ python3 "$SCRIPT_DIR/moveit_mvp_visual_replay.py" \
   --output-dir "$OUT_DIR/logs" \
   > "$OUT_DIR/logs/moveit_mvp_visual_replay.log" 2>&1
 
+if [[ "$DAY_ID" == "day03" ]]; then
+  python3 "$SCRIPT_DIR/d3_hand_eye_calibration.py" \
+    --arm-side right \
+    --output "$OUT_DIR/logs/d3_hand_eye_matrix.json" \
+    > "$OUT_DIR/logs/d3_hand_eye_matrix_stdout.json" 2>&1
+fi
+
 echo "MVP MoveIt/Gazebo visual complete."
 echo "output=$OUT_DIR"
 echo "summary=$OUT_DIR/logs/mvp_moveit_summary.json"
+if [[ "$DAY_ID" == "day03" ]]; then
+  echo "hand_eye=$OUT_DIR/logs/d3_hand_eye_matrix.json"
+fi

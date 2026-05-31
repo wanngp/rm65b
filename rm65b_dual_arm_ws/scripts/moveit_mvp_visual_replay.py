@@ -7,21 +7,33 @@ import math
 import time
 from pathlib import Path
 
+try:
+    import cv2
+except Exception:  # pragma: no cover - optional runtime dependency
+    cv2 = None
+
+try:
+    import numpy as np
+except Exception:  # pragma: no cover - optional runtime dependency
+    np = None
+
 import rclpy
 import yaml
-from geometry_msgs.msg import WrenchStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped, WrenchStamped
 from moveit_msgs.action import MoveGroup
 from moveit_msgs.msg import Constraints, JointConstraint, MoveItErrorCodes
 from rclpy.action import ActionClient
 from rclpy.node import Node
-from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64, String
+from sensor_msgs.msg import CameraInfo, Image, JointState
+from std_msgs.msg import Bool, Float64, String
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 LEFT_JOINTS = [f"left_joint{i}" for i in range(1, 7)]
 RIGHT_JOINTS = [f"right_joint{i}" for i in range(1, 7)]
 DUAL_JOINTS = LEFT_JOINTS + RIGHT_JOINTS
+ARUCO_TAG_SIZE_M = 0.080
+ARUCO_MARKER_ID = 7
 
 HOME = (0.0, -0.35, 0.65, 0.0, 0.90, 0.0)
 
@@ -75,6 +87,47 @@ def _finite_difference_velocities(positions: list[list[float]], times: list[floa
     return velocities
 
 
+def _matrix_to_quaternion(matrix) -> tuple[float, float, float, float]:
+    m00 = float(matrix[0][0])
+    m01 = float(matrix[0][1])
+    m02 = float(matrix[0][2])
+    m10 = float(matrix[1][0])
+    m11 = float(matrix[1][1])
+    m12 = float(matrix[1][2])
+    m20 = float(matrix[2][0])
+    m21 = float(matrix[2][1])
+    m22 = float(matrix[2][2])
+    trace = m00 + m11 + m22
+    if trace > 0.0:
+        scale = math.sqrt(trace + 1.0) * 2.0
+        qw = 0.25 * scale
+        qx = (m21 - m12) / scale
+        qy = (m02 - m20) / scale
+        qz = (m10 - m01) / scale
+    elif m00 > m11 and m00 > m22:
+        scale = math.sqrt(1.0 + m00 - m11 - m22) * 2.0
+        qw = (m21 - m12) / scale
+        qx = 0.25 * scale
+        qy = (m01 + m10) / scale
+        qz = (m02 + m20) / scale
+    elif m11 > m22:
+        scale = math.sqrt(1.0 + m11 - m00 - m22) * 2.0
+        qw = (m02 - m20) / scale
+        qx = (m01 + m10) / scale
+        qy = 0.25 * scale
+        qz = (m12 + m21) / scale
+    else:
+        scale = math.sqrt(1.0 + m22 - m00 - m11) * 2.0
+        qw = (m10 - m01) / scale
+        qx = (m02 + m20) / scale
+        qy = (m12 + m21) / scale
+        qz = 0.25 * scale
+    norm = math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw)
+    if norm <= 1.0e-9:
+        return 0.0, 0.0, 0.0, 1.0
+    return qx / norm, qy / norm, qz / norm, qw / norm
+
+
 def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float, ...]]]:
     day = day_id.lower()
     if day in {"day01", "d1"}:
@@ -98,14 +151,14 @@ def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float
             ("d2_return_home", HOME, HOME),
         ]
     if day in {"day03", "d3"}:
-        left_view = (0.046, -0.840, 1.161, -0.120, 0.865, -0.383)
-        left_align = (0.260, -0.700, 1.300, -0.210, 0.860, -0.610)
-        left_touch = (0.356, -0.567, 1.408, -0.263, 0.860, -0.705)
+        right_view = (-1.089, -0.582, 1.161, 1.098, 1.776, -2.139)
+        right_align = (-0.225, -0.522, 1.224, 0.251, 1.200, -1.722)
+        right_confirm = (-0.886, -0.280, 0.993, 0.662, 1.554, -2.035)
         return [
-            ("d3_camera_view", left_view, HOME),
-            ("d3_visual_align", left_align, HOME),
-            ("d3_touch_target", left_touch, HOME),
-            ("d3_retract", left_view, HOME),
+            ("d3_right_hand_eye_view_wide", HOME, right_view),
+            ("d3_right_visual_align_target", HOME, right_align),
+            ("d3_right_hand_eye_confirm_lock", HOME, right_confirm),
+            ("d3_right_retract_camera", HOME, right_view),
         ]
     if day in {"day04", "d4"}:
         return [
@@ -176,6 +229,15 @@ class MoveItMvpReplay(Node):
         self.force_target_pub = self.create_publisher(WrenchStamped, "/force_control/target_wrench", 10)
         self.force_error_pub = self.create_publisher(WrenchStamped, "/force_control/wrench_error", 10)
         self.admittance_pub = self.create_publisher(Float64, "/force_control/admittance_offset", 10)
+        self.camera_image_pub = self.create_publisher(Image, "/right_camera/image_rect", 10)
+        self.camera_info_pub = self.create_publisher(CameraInfo, "/right_camera/camera_info", 10)
+        self.debug_image_pub = self.create_publisher(Image, "/vision/debug_image", 10)
+        self.vision_target_pub = self.create_publisher(PoseStamped, "/vision/target_pose", 10)
+        self.vision_status_pub = self.create_publisher(String, "/vision/status", 10)
+        self.vision_metrics_pub = self.create_publisher(String, "/vision/metrics", 10)
+        self.visual_twist_pub = self.create_publisher(TwistStamped, "/visual_servo/twist_cmd", 10)
+        self.visual_aligned_pub = self.create_publisher(Bool, "/visual_servo/aligned", 10)
+        self.visual_adapter_state_pub = self.create_publisher(String, "/visual_servo/gazebo_adapter_state", 10)
         self.gripper_pubs = [
             self.create_publisher(Float64, "/model/dual_rm65b_mvp/left_gripper_upper_cmd", 10),
             self.create_publisher(Float64, "/model/dual_rm65b_mvp/left_gripper_lower_cmd", 10),
@@ -348,6 +410,9 @@ class MoveItMvpReplay(Node):
             "visual_points": len(points),
             "trajectory_rate_hz": self.args.trajectory_rate_hz,
         }
+        if self.args.day_id.lower() in {"day03", "d3"}:
+            summary["hand_eye_matrix_file"] = "d3_hand_eye_matrix.json"
+            summary["hand_eye_camera_topic"] = "/right_camera/image_rect"
         (out / "mvp_moveit_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     def replay(self, points: list[dict]) -> None:
@@ -427,6 +492,203 @@ class MoveItMvpReplay(Node):
             error_msg.header.frame_id = "right_tcp"
             error_msg.wrench.force.z = error
             self.force_error_pub.publish(error_msg)
+
+        if self.args.day_id.lower() in {"day03", "d3", "day05", "d5"}:
+            self._publish_vision_state(stamp=stamp, phase=phase, elapsed=elapsed)
+
+    def _publish_vision_state(self, *, stamp, phase: str, elapsed: float) -> None:
+        if "wide" in phase:
+            pixel_error = 62.0
+            marker_px = 42
+        elif "align" in phase:
+            pixel_error = 24.0
+            marker_px = 54
+        elif "confirm" in phase:
+            pixel_error = 3.0
+            marker_px = 62
+        elif "retract" in phase:
+            pixel_error = 18.0
+            marker_px = 48
+        else:
+            pixel_error = 12.0 + 8.0 * abs(math.sin(elapsed))
+            marker_px = 50
+
+        info = CameraInfo()
+        info.header.stamp = stamp
+        info.header.frame_id = "right_camera_color_optical_frame"
+        info.width = 160
+        info.height = 120
+        info.distortion_model = "plumb_bob"
+        info.d = [0.0, 0.0, 0.0, 0.0, 0.0]
+        info.k = [140.0, 0.0, 80.0, 0.0, 140.0, 60.0, 0.0, 0.0, 1.0]
+        info.r = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+        info.p = [140.0, 0.0, 80.0, 0.0, 0.0, 140.0, 60.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+        self.camera_info_pub.publish(info)
+
+        offset = int(max(min(pixel_error, 70.0), -70.0))
+        image = self._synthetic_vision_image(
+            stamp,
+            160,
+            120,
+            offset,
+            marker_px,
+            "right_camera_color_optical_frame",
+        )
+        self.camera_image_pub.publish(image)
+        self.debug_image_pub.publish(image)
+
+        detection = self._detect_aruco_from_synthetic_image(image, info)
+        if detection is None:
+            target_x = ARUCO_TAG_SIZE_M * float(info.k[0]) / max(marker_px, 1)
+            target_y = -pixel_error * target_x / float(info.k[0])
+            target_z = 0.0
+            quat = (0.0, 0.0, 0.0, 1.0)
+            method = "fallback_color_center"
+            detected_error = pixel_error
+        else:
+            target_x, target_y, target_z, quat, detected_error = detection
+            method = "opencv_aruco_4x4_50_id7"
+        aligned = abs(detected_error) <= 5.0
+
+        target = PoseStamped()
+        target.header.stamp = stamp
+        target.header.frame_id = "right_camera_color_optical_frame"
+        target.pose.position.x = float(target_x)
+        target.pose.position.y = float(target_y)
+        target.pose.position.z = float(target_z)
+        target.pose.orientation.x = float(quat[0])
+        target.pose.orientation.y = float(quat[1])
+        target.pose.orientation.z = float(quat[2])
+        target.pose.orientation.w = float(quat[3])
+        self.vision_target_pub.publish(target)
+
+        twist = TwistStamped()
+        twist.header.stamp = stamp
+        twist.header.frame_id = "right_camera_color_optical_frame"
+        twist.twist.linear.x = 0.0 if aligned else min(abs(detected_error) / 900.0, 0.06)
+        twist.twist.linear.y = 0.0 if aligned else -detected_error / 1400.0
+        twist.twist.linear.z = 0.0 if aligned else -0.015
+        twist.twist.angular.z = 0.0 if aligned else -detected_error / 900.0
+        self.visual_twist_pub.publish(twist)
+        self.visual_aligned_pub.publish(Bool(data=aligned))
+        self.vision_status_pub.publish(
+            String(
+                data=(
+                    f"mvp_hand_eye phase={phase} method={method} marker_id={ARUCO_MARKER_ID} "
+                    f"tag_size_m={ARUCO_TAG_SIZE_M:.3f} pixel_error={detected_error:.1f} "
+                    f"t_camera_target=({target_x:.4f},{target_y:.4f},{target_z:.4f}) aligned={aligned}"
+                )
+            )
+        )
+        self.vision_metrics_pub.publish(
+            String(
+                data=(
+                    f"method={method};dictionary=DICT_4X4_50;marker_id={ARUCO_MARKER_ID};"
+                    f"tag_size_m={ARUCO_TAG_SIZE_M:.3f};target_px_error={detected_error:.1f};"
+                    f"T_camera_target_translation_m={target_x:.5f},{target_y:.5f},{target_z:.5f};"
+                    f"hand_eye_sample_valid={aligned}"
+                )
+            )
+        )
+        self.visual_adapter_state_pub.publish(
+            String(data=f"mvp_visual_servo_adapter phase={phase} twist_from_synthetic_target aligned={aligned}")
+        )
+
+    def _detect_aruco_from_synthetic_image(self, image: Image, info: CameraInfo):
+        if cv2 is None or np is None or not hasattr(cv2, "aruco"):
+            return None
+        try:
+            frame = np.frombuffer(image.data, dtype=np.uint8).reshape((image.height, image.width, 3))
+            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+            if hasattr(cv2.aruco, "ArucoDetector"):
+                corners, ids, _ = cv2.aruco.ArucoDetector(dictionary).detectMarkers(gray)
+            else:
+                corners, ids, _ = cv2.aruco.detectMarkers(gray, dictionary)
+            if ids is None:
+                return None
+            marker_index = 0
+            for idx, marker_id in enumerate(ids.flatten().tolist()):
+                if int(marker_id) == ARUCO_MARKER_ID:
+                    marker_index = idx
+                    break
+            camera_matrix = np.array(info.k, dtype=float).reshape(3, 3)
+            dist_coeffs = np.array(info.d, dtype=float)
+            rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(
+                [corners[marker_index]],
+                ARUCO_TAG_SIZE_M,
+                camera_matrix,
+                dist_coeffs,
+            )
+            rmat, _ = cv2.Rodrigues(rvecs[0][0])
+            qx, qy, qz, qw = _matrix_to_quaternion(rmat)
+            center_u = float(corners[marker_index].reshape(-1, 2)[:, 0].mean())
+            pixel_error = center_u - float(info.k[2])
+            tvec = tvecs[0][0]
+            return float(tvec[2]), float(tvec[0]), float(tvec[1]), (qx, qy, qz, qw), pixel_error
+        except Exception as exc:
+            self.vision_status_pub.publish(String(data=f"aruco_detection_error:{exc}"))
+            return None
+
+    def _synthetic_vision_image(
+        self,
+        stamp,
+        width: int,
+        height: int,
+        offset_x: int,
+        marker_px: int,
+        frame_id: str,
+    ) -> Image:
+        data = bytearray([245, 245, 240]) * (width * height)
+        cx = max(marker_px // 2 + 4, min(width - marker_px // 2 - 5, width // 2 + offset_x))
+        cy = height // 2
+        marker = self._aruco_marker_bytes(marker_px)
+        x0 = cx - marker_px // 2
+        y0 = cy - marker_px // 2
+        for row in range(marker_px):
+            for col in range(marker_px):
+                value = marker[row][col]
+                idx = ((y0 + row) * width + (x0 + col)) * 3
+                data[idx : idx + 3] = bytes((value, value, value))
+        for x in range(width // 2 - 14, width // 2 + 15):
+            idx = (cy * width + x) * 3
+            data[idx : idx + 3] = b"\x30\x90\xff"
+        for y in range(cy - 14, cy + 15):
+            idx = (y * width + width // 2) * 3
+            data[idx : idx + 3] = b"\x30\x90\xff"
+        msg = Image()
+        msg.header.stamp = stamp
+        msg.header.frame_id = frame_id
+        msg.height = height
+        msg.width = width
+        msg.encoding = "rgb8"
+        msg.is_bigendian = 0
+        msg.step = width * 3
+        msg.data = bytes(data)
+        return msg
+
+    def _aruco_marker_bytes(self, side_px: int) -> list[list[int]]:
+        if cv2 is not None and hasattr(cv2, "aruco"):
+            dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+            marker = cv2.aruco.generateImageMarker(dictionary, ARUCO_MARKER_ID, side_px, borderBits=1)
+            return marker.tolist()
+        pattern = (
+            (0, 0, 0, 0, 0, 0),
+            (0, 1, 1, 0, 0, 0),
+            (0, 0, 1, 0, 0, 0),
+            (0, 1, 1, 1, 1, 0),
+            (0, 0, 0, 1, 0, 0),
+            (0, 0, 0, 0, 0, 0),
+        )
+        marker = []
+        for y in range(side_px):
+            row = []
+            cell_y = min(5, int(y * 6 / side_px))
+            for x in range(side_px):
+                cell_x = min(5, int(x * 6 / side_px))
+                row.append(255 if pattern[cell_y][cell_x] else 0)
+            marker.append(row)
+        return marker
 
     def _publish_gripper(self, *, loop_elapsed: float, phase: str) -> None:
         day = self.args.day_id.lower()

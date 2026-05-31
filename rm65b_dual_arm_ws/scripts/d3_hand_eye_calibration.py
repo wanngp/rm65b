@@ -118,7 +118,7 @@ def main() -> int:
     parser.add_argument(
         "--gripper-to-camera-pose",
         type=parse_pose,
-        default=parse_pose("0.034 0 0.095 0 0.35 0.38"),
+        default=parse_pose("0.064 0 0.045 0 0.35 0"),
         help="Configured Gazebo eye-in-hand sensor pose in gripper frame",
     )
     parser.add_argument(
@@ -131,6 +131,12 @@ def main() -> int:
         "--samples-json",
         type=Path,
         help="Optional real calibration samples with T_base_gripper and T_camera_target matrices",
+    )
+    parser.add_argument(
+        "--arm-side",
+        choices=("left", "right"),
+        default="right",
+        help="Arm/camera side for labeling the generated calibration result",
     )
     parser.add_argument(
         "--output",
@@ -152,6 +158,14 @@ def main() -> int:
 
     result = {
         "source": source,
+        "arm_side": args.arm_side,
+        "camera_topic": f"/{args.arm_side}_camera/image_rect",
+        "camera_info_topic": f"/{args.arm_side}_camera/camera_info",
+        "marker": {
+            "dictionary": "DICT_4X4_50",
+            "id": 7,
+            "size_m": 0.080,
+        },
         "frames": {
             "T_gripper_camera": "camera pose expressed in gripper palm frame",
             "T_camera_gripper": "gripper palm pose expressed in camera frame",
