@@ -276,11 +276,12 @@ def add_day_scene(world: ET.Element, day_id: str) -> None:
         add_box_model(world, "d1_forbidden_collision_zone", "0 -0.10 0.55 0 0 0", "0.18 0.55 0.36", "0.95 0.08 0.06 0.55")
         add_box_model(world, "d1_goal_gate", "0 0.35 0.60 0 0 0", "0.75 0.035 0.55", "0.08 0.80 0.25 0.45", collision=False)
     elif day in {"day02", "d2"}:
-        add_box_model(world, "d2_force_wall", "0.275 0.000 0.64 0 0 0", "0.060 0.48 0.38", "0.10 0.12 0.14 1")
-        add_box_model(world, "d2_compliance_pad", "0.305 0.000 0.64 0 0 0", "0.018 0.30 0.26", "0.10 0.35 0.95 1")
-        add_box_model(world, "d2_contact_face", "0.318 0.000 0.64 0 0 0", "0.008 0.34 0.30", "0.95 0.16 0.10 0.70", collision=False)
-        add_box_model(world, "d2_probe_path_marker", "0.355 0.040 0.64 0 0 0", "0.120 0.020 0.020", "0.96 0.78 0.16 0.65", collision=False)
-        add_box_model(world, "d2_relief_window", "0.335 0.070 0.74 0 0 0", "0.16 0.28 0.025", "0.10 0.85 0.35 0.55", collision=False)
+        front_aligned_pose = "3.1416 1.1999 1.5708"
+        add_box_model(world, "d2_force_wall", f"0.450 0.229 0.425 {front_aligned_pose}", "0.060 0.42 0.32", "0.10 0.12 0.14 1")
+        add_box_model(world, "d2_compliance_pad", f"0.450 0.212 0.467 {front_aligned_pose}", "0.018 0.30 0.24", "0.10 0.35 0.95 1")
+        add_box_model(world, "d2_contact_face", f"0.450 0.210 0.471 {front_aligned_pose}", "0.008 0.34 0.28", "0.95 0.16 0.10 0.70", collision=False)
+        add_box_model(world, "d2_probe_path_marker", f"0.450 0.184 0.555 {front_aligned_pose}", "0.170 0.018 0.018", "0.96 0.78 0.16 0.65", collision=False)
+        add_box_model(world, "d2_relief_window", f"0.450 0.198 0.520 {front_aligned_pose}", "0.080 0.26 0.018", "0.10 0.85 0.35 0.55", collision=False)
     elif day in {"day03", "d3"}:
         add_box_model(world, "d3_vision_board", "-0.34 0.38 0.68 0 0 0", "0.34 0.035 0.30", "0.05 0.09 0.12 1")
         add_box_model(world, "d3_green_target", "-0.34 0.35 0.70 0 0 0", "0.10 0.018 0.10", "0.05 0.95 0.25 1")

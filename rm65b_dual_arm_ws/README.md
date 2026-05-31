@@ -136,9 +136,10 @@ This command uses the clean MoveIt/Gazebo runner:
 - D2: MoveIt plans approach/press/release stages, with visible compliant relief
   and `/force_control/*` state output. The D2 force-pad scene is placed close
   to the right gripper path so the visual contact is easy to inspect. The right
-  gripper holds a small yellow contact block and extends toward the center of
-  the work area, pushing that block into the front face of the wall instead of
-  driving the gripper fingers directly into the obstacle.
+  gripper holds a small yellow contact block and moves forward/backward along
+  the gripper-front direction defined by the right arm's initial pose, pushing
+  that block into the front-aligned wall instead of driving the gripper fingers
+  directly into the obstacle.
 - The MVP runner does not use the legacy world generator and does not spawn
   left and right arms as separate models.
 

@@ -30,10 +30,14 @@ D1_LINE_B = (0.36, -0.10, 0.34, -0.26, 1.20, 0.35)
 D1_LINE_C = (0.36, -0.54, 1.48, 0.34, 0.56, -0.70)
 
 D2_LEFT_OBSERVER = (0.260, -0.580, 0.780, 0.100, 0.720, 0.200)
-D2_RIGHT_READY = (0.150, -0.600, 0.920, 0.050, 0.620, 0.100)
-D2_RIGHT_APPROACH = (0.350, -0.720, 1.050, 0.180, 0.520, 0.220)
-D2_RIGHT_PRESS = (0.650, -0.840, 1.180, 0.320, 0.420, 0.360)
-D2_RIGHT_RELIEF = (0.500, -0.780, 1.120, 0.260, 0.460, 0.300)
+D2_RIGHT_READY = (0.000, -0.300, 0.423, 0.000, 0.944, 0.000)
+D2_RIGHT_APPROACH = (0.000, -0.450, 0.935, 0.000, 0.727, 0.000)
+D2_RIGHT_PRESS = (0.000, -0.300, 1.100, 0.000, 0.826, 0.000)
+D2_RIGHT_RELIEF = (0.000, -0.433, 1.100, 0.000, 0.708, 0.000)
+
+D45_RIGHT_READY = (-0.280, -0.540, 0.760, -0.120, 0.740, -0.220)
+D45_RIGHT_PRESS = (-0.780, -0.780, 1.100, -0.500, 0.440, -0.680)
+D45_RIGHT_RELIEF = (-0.650, -0.725, 1.040, -0.430, 0.500, -0.580)
 
 
 def _lerp(a: tuple[float, ...], b: tuple[float, ...], alpha: float) -> tuple[float, ...]:
@@ -106,15 +110,15 @@ def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float
     if day in {"day04", "d4"}:
         return [
             ("home", HOME, HOME),
-            ("d4_hook_yarn", D1_LINE_A, D2_RIGHT_READY),
-            ("d4_pull_tight", D1_LINE_B, D2_RIGHT_PRESS),
+            ("d4_hook_yarn", D1_LINE_A, D45_RIGHT_READY),
+            ("d4_pull_tight", D1_LINE_B, D45_RIGHT_PRESS),
             ("d4_release", HOME, HOME),
         ]
     return [
         ("home", HOME, HOME),
-        ("d5_vision_pick", D1_LINE_A, D2_RIGHT_READY),
-        ("d5_force_pull", D1_LINE_B, D2_RIGHT_PRESS),
-        ("d5_exchange", _lerp(D1_LINE_A, D1_LINE_B, 0.5), D2_RIGHT_RELIEF),
+        ("d5_vision_pick", D1_LINE_A, D45_RIGHT_READY),
+        ("d5_force_pull", D1_LINE_B, D45_RIGHT_PRESS),
+        ("d5_exchange", _lerp(D1_LINE_A, D1_LINE_B, 0.5), D45_RIGHT_RELIEF),
         ("d5_done", HOME, HOME),
     ]
 
