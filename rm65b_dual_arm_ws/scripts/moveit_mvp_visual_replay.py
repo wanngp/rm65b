@@ -24,8 +24,9 @@ DUAL_JOINTS = LEFT_JOINTS + RIGHT_JOINTS
 
 HOME = (0.0, -0.35, 0.65, 0.0, 0.90, 0.0)
 
-D1_LINE_A = (0.0, -0.64, 1.02, 0.0, 0.72, 0.0)
-D1_LINE_B = (0.0, -0.18, 0.36, 0.0, 1.05, 0.0)
+D1_LINE_A = (0.36, -0.72, 1.24, 0.26, 0.62, -0.35)
+D1_LINE_B = (0.36, -0.10, 0.34, -0.26, 1.20, 0.35)
+D1_LINE_C = (0.36, -0.54, 1.48, 0.34, 0.56, -0.70)
 
 D2_LEFT_OBSERVER = (0.260, -0.580, 0.780, 0.100, 0.720, 0.200)
 D2_RIGHT_READY = (-0.280, -0.540, 0.760, -0.120, 0.740, -0.220)
@@ -50,6 +51,7 @@ def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float
             ("home", HOME, HOME),
             ("d1_line_start", D1_LINE_A, _mirror(D1_LINE_A)),
             ("d1_straight_line_out", D1_LINE_B, _mirror(D1_LINE_B)),
+            ("d1_straight_line_high", D1_LINE_C, _mirror(D1_LINE_C)),
             ("d1_straight_line_back", D1_LINE_A, _mirror(D1_LINE_A)),
             ("d1_return_home", HOME, HOME),
         ]
@@ -140,6 +142,12 @@ class MoveItMvpReplay(Node):
         self.force_target_pub = self.create_publisher(WrenchStamped, "/force_control/target_wrench", 10)
         self.force_error_pub = self.create_publisher(WrenchStamped, "/force_control/wrench_error", 10)
         self.admittance_pub = self.create_publisher(Float64, "/force_control/admittance_offset", 10)
+        self.gripper_pubs = [
+            self.create_publisher(Float64, "/model/dual_rm65b_mvp/left_gripper_upper_cmd", 10),
+            self.create_publisher(Float64, "/model/dual_rm65b_mvp/left_gripper_lower_cmd", 10),
+            self.create_publisher(Float64, "/model/dual_rm65b_mvp/right_gripper_upper_cmd", 10),
+            self.create_publisher(Float64, "/model/dual_rm65b_mvp/right_gripper_lower_cmd", 10),
+        ]
 
     def wait_for_moveit(self) -> None:
         if not self.client.wait_for_server(timeout_sec=self.args.wait_timeout):
@@ -299,6 +307,7 @@ class MoveItMvpReplay(Node):
         run_duration = self.args.duration if self.args.duration > 0 else plan_duration + 2.0
         started = time.monotonic()
         next_trajectory_publish = started
+        trajectory_republish_interval = max(plan_duration + 0.75, 2.0)
 
         while rclpy.ok() and time.monotonic() - started <= run_duration:
             now = time.monotonic()
@@ -306,7 +315,7 @@ class MoveItMvpReplay(Node):
                 self.gazebo_traj_pub.publish(combined)
                 self.left_traj_pub.publish(left)
                 self.right_traj_pub.publish(right)
-                next_trajectory_publish = now + 1.0
+                next_trajectory_publish = now + trajectory_republish_interval
             loop_elapsed = (now - started) % max(plan_duration, 0.1)
             state = _sample(points, loop_elapsed)
             self._publish_observable_state(state, loop_elapsed)
@@ -336,6 +345,7 @@ class MoveItMvpReplay(Node):
         phase = str(state.get("phase", self.args.day_id))
         self.phase_pub.publish(String(data=phase))
         self.day_status_pub.publish(String(data=f"{self.args.day_id} mvp_moveit:{phase}"))
+        self._publish_gripper(loop_elapsed=elapsed, phase=phase)
 
         if self.args.day_id.lower() in {"day02", "d2"}:
             target = 7.5
@@ -365,6 +375,22 @@ class MoveItMvpReplay(Node):
             error_msg.wrench.force.z = error
             self.force_error_pub.publish(error_msg)
 
+    def _publish_gripper(self, *, loop_elapsed: float, phase: str) -> None:
+        day = self.args.day_id.lower()
+        if day in {"day01", "d1"}:
+            open_position = 0.018
+            closed_position = 0.001
+            period = 2.4
+            alpha = (loop_elapsed % period) / period
+            position = open_position if alpha < 0.5 else closed_position
+        elif day in {"day02", "d2"}:
+            position = 0.001 if ("press" in phase or "relief" in phase) else 0.012
+        else:
+            position = 0.010
+        msg = Float64(data=float(position))
+        for pub in self.gripper_pubs:
+            pub.publish(msg)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -379,7 +405,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--velocity-scaling", type=float, default=0.45)
     parser.add_argument("--acceleration-scaling", type=float, default=0.45)
     parser.add_argument("--joint-tolerance", type=float, default=0.015)
-    parser.add_argument("--segment-duration", type=float, default=3.0)
+    parser.add_argument("--segment-duration", type=float, default=4.2)
     parser.add_argument("--state-rate-hz", type=float, default=20.0)
     parser.add_argument("--gazebo-topic", default="/model/dual_rm65b_mvp/joint_trajectory")
     return parser.parse_args()

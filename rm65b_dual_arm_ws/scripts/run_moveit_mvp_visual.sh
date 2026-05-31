@@ -97,8 +97,40 @@ echo "duration=$DURATION"
 echo "visual_stack=Gazebo single dual_rm65b_mvp model; no legacy world generator; no per-arm spawn" \
   | tee "$OUT_DIR/logs/mvp_visual_mode.txt"
 
+cat > "$OUT_DIR/logs/day_topic_contract.txt" <<EOF
+Day visual topic contract
+day=$DAY_ID
+model=dual_rm65b_mvp
+moveit_action=/move_action
+robot_state=/joint_states
+gazebo_trajectory=/model/dual_rm65b_mvp/joint_trajectory
+left_plan=/dual_arm_planning/left_joint_trajectory
+right_plan=/dual_arm_planning/right_joint_trajectory
+phase=/dual_arm_planning/phase
+status=/acceptance/day_status
+gripper_left_upper=/model/dual_rm65b_mvp/left_gripper_upper_cmd
+gripper_left_lower=/model/dual_rm65b_mvp/left_gripper_lower_cmd
+gripper_right_upper=/model/dual_rm65b_mvp/right_gripper_upper_cmd
+gripper_right_lower=/model/dual_rm65b_mvp/right_gripper_lower_cmd
+d2_force_state=/force_control/state
+d2_force_target=/force_control/target_wrench
+d2_force_error=/force_control/wrench_error
+d2_admittance=/force_control/admittance_offset
+
+Quick checks while the visual run is active:
+ros2 action list | grep /move_action
+ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|acceptance'
+ros2 topic echo /acceptance/day_status --once
+ros2 topic echo /dual_arm_planning/phase --once
+EOF
+echo "topic_contract=$OUT_DIR/logs/day_topic_contract.txt"
+
 ros2 run ros_gz_bridge parameter_bridge \
   /model/dual_rm65b_mvp/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory \
+  /model/dual_rm65b_mvp/left_gripper_upper_cmd@std_msgs/msg/Float64]gz.msgs.Double \
+  /model/dual_rm65b_mvp/left_gripper_lower_cmd@std_msgs/msg/Float64]gz.msgs.Double \
+  /model/dual_rm65b_mvp/right_gripper_upper_cmd@std_msgs/msg/Float64]gz.msgs.Double \
+  /model/dual_rm65b_mvp/right_gripper_lower_cmd@std_msgs/msg/Float64]gz.msgs.Double \
   > "$OUT_DIR/logs/ros_gz_bridge.log" 2>&1 &
 PIDS+=("$!")
 

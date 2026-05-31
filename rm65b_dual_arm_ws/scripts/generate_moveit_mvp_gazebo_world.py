@@ -29,6 +29,21 @@ def text(parent: ET.Element, tag: str, value: str) -> ET.Element:
     return elem
 
 
+def indent_xml(elem: ET.Element, level: int = 0) -> None:
+    indent = "\n" + level * "  "
+    child_indent = "\n" + (level + 1) * "  "
+    children = list(elem)
+    if children:
+        if not elem.text or not elem.text.strip():
+            elem.text = child_indent
+        for child in children:
+            indent_xml(child, level + 1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = indent
+    elif level and (not elem.tail or not elem.tail.strip()):
+        elem.tail = indent
+
+
 def add_box_model(
     world: ET.Element,
     name: str,
@@ -70,6 +85,92 @@ def add_marker_cylinder(world: ET.Element, name: str, pose: str, radius: str, le
     material = ET.SubElement(visual, "material")
     text(material, "ambient", color)
     text(material, "diffuse", color)
+
+
+def add_inertial(parent: ET.Element, mass: str = "0.025") -> None:
+    inertial = ET.SubElement(parent, "inertial")
+    text(inertial, "pose", "0 0 0 0 0 0")
+    text(inertial, "mass", mass)
+    inertia = ET.SubElement(inertial, "inertia")
+    text(inertia, "ixx", "0.000010")
+    text(inertia, "ixy", "0")
+    text(inertia, "ixz", "0")
+    text(inertia, "iyy", "0.000010")
+    text(inertia, "iyz", "0")
+    text(inertia, "izz", "0.000010")
+
+
+def add_visual_box(parent: ET.Element, name: str, size: str, color: str, pose: str | None = None) -> None:
+    visual = ET.SubElement(parent, "visual", {"name": name})
+    if pose is not None:
+        text(visual, "pose", pose)
+    geometry = ET.SubElement(visual, "geometry")
+    box = ET.SubElement(geometry, "box")
+    text(box, "size", size)
+    material = ET.SubElement(visual, "material")
+    text(material, "ambient", color)
+    text(material, "diffuse", color)
+
+
+def add_gripper_position_controller(model: ET.Element, joint_name: str, topic: str) -> None:
+    plugin = ET.SubElement(
+        model,
+        "plugin",
+        {
+            "filename": "gz-sim-joint-position-controller-system",
+            "name": "gz::sim::systems::JointPositionController",
+        },
+    )
+    text(plugin, "joint_name", joint_name)
+    text(plugin, "topic", topic)
+    text(plugin, "p_gain", "90")
+    text(plugin, "i_gain", "0.1")
+    text(plugin, "d_gain", "2.0")
+
+
+def add_movable_gripper(model: ET.Element, side: str, color: str) -> None:
+    parent_link = f"{side}_attached_scaled_gripper"
+    palm = model.find(f"link[@name='{parent_link}']")
+    finger_x = 0.070
+    if palm is None:
+        parent_link = f"{side}_Link6"
+        palm = model.find(f"link[@name='{parent_link}']")
+        finger_x = 0.088
+    if palm is None:
+        return
+
+    for visual in list(palm.findall("visual")):
+        name = (visual.get("name") or "").lower()
+        if "finger" in name or "hook" in name:
+            palm.remove(visual)
+
+    specs = (
+        ("upper", f"{finger_x:.3f} 0.006 0 0 0 0", "0 1 0"),
+        ("lower", f"{finger_x:.3f} -0.006 0 0 0 0", "0 -1 0"),
+    )
+    for name, pose, axis_xyz in specs:
+        link_name = f"{side}_mvp_gripper_{name}_finger"
+        joint_name = f"{side}_mvp_gripper_{name}_slide"
+        topic = f"/model/dual_rm65b_mvp/{side}_gripper_{name}_cmd"
+
+        finger = ET.SubElement(model, "link", {"name": link_name})
+        pose_elem = text(finger, "pose", pose)
+        pose_elem.set("relative_to", parent_link)
+        text(finger, "gravity", "false")
+        add_inertial(finger)
+        add_visual_box(finger, "finger", "0.052 0.006 0.010", color)
+        add_visual_box(finger, "yarn_hook", "0.014 0.014 0.010", color, "0.028 0 0 0 0 0")
+
+        joint = ET.SubElement(model, "joint", {"name": joint_name, "type": "prismatic"})
+        text(joint, "parent", parent_link)
+        text(joint, "child", link_name)
+        axis = ET.SubElement(joint, "axis")
+        text(axis, "xyz", axis_xyz)
+        limit = ET.SubElement(axis, "limit")
+        text(limit, "lower", "0.000")
+        text(limit, "upper", "0.020")
+
+        add_gripper_position_controller(model, joint_name, topic)
 
 
 def add_controller(model: ET.Element) -> None:
@@ -116,6 +217,8 @@ def load_model(model_sdf: Path) -> ET.Element:
             link.remove(collision)
 
     add_controller(model)
+    add_movable_gripper(model, "left", "0.05 0.10 0.95 1")
+    add_movable_gripper(model, "right", "0.95 0.16 0.08 1")
     return model
 
 
@@ -169,7 +272,7 @@ def build_world(model: ET.Element, day_id: str, output: Path) -> None:
     world.append(model)
     add_day_scene(world, day_id)
 
-    ET.indent(sdf, space="  ")
+    indent_xml(sdf)
     ET.ElementTree(sdf).write(output, encoding="utf-8", xml_declaration=True)
 
 

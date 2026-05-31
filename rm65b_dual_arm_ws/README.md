@@ -116,7 +116,8 @@ bash scripts/bootstrap_vmware_ubuntu.sh \
 ```
 
 Start with Day 01 visual inspection. On the MVP visual branch this opens
-Gazebo, starts MoveIt `move_group`, and writes logs under `~/rm65b_visual_*`:
+Gazebo, starts MoveIt `move_group`, and writes logs under
+`~/rm65b_mvp_visual_*`:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
@@ -127,10 +128,31 @@ This command uses the clean MoveIt/Gazebo runner:
 
 - D1: MoveIt plans a clear dual-arm straight-line sweep and Gazebo shows one
   `dual_rm65b_mvp` model moving through a custom lane/collision-zone scene.
+  D1 is the node/topic baseline for the later days: it publishes MoveIt
+  planning status, dual-arm trajectories, joint states, Gazebo trajectory
+  commands, acceptance status, and visible gripper open/close commands.
 - D2: MoveIt plans approach/press/release stages, with visible compliant relief
   and `/force_control/*` state output.
 - The MVP runner does not use the legacy world generator and does not spawn
   left and right arms as separate models.
+
+While Day 01 is running, use another terminal to check the baseline topic
+contract:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+
+ros2 action list | grep /move_action
+ros2 topic list | grep -E 'dual_arm|joint_states|dual_rm65b_mvp|force_control|acceptance'
+ros2 topic echo /acceptance/day_status --once
+ros2 topic echo /dual_arm_planning/phase --once
+```
+
+The same command writes the expected topic list to
+`$OUT/logs/day_topic_contract.txt`, where `$OUT` is the output directory printed
+by the visual runner.
 
 To inspect the Day 02 force-compliance motion through the required MoveIt path:
 
