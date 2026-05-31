@@ -195,6 +195,25 @@ def add_movable_gripper(model: ET.Element, side: str, color: str) -> None:
         add_gripper_position_controller(model, joint_name, topic)
 
 
+def add_held_contact_block(model: ET.Element, side: str) -> None:
+    parent_link = f"{side}_attached_scaled_gripper"
+    if model.find(f"link[@name='{parent_link}']") is None:
+        parent_link = f"{side}_Link6"
+    if model.find(f"link[@name='{parent_link}']") is None:
+        return
+
+    block = ET.SubElement(model, "link", {"name": f"{side}_mvp_held_contact_block"})
+    pose = text(block, "pose", "0.150 0 0 0 0 0")
+    pose.set("relative_to", parent_link)
+    text(block, "gravity", "false")
+    add_inertial(block, "0.08")
+    add_visual_box(block, "held_block", "0.038 0.038 0.038", "0.96 0.78 0.16 1", collision=True)
+
+    joint = ET.SubElement(model, "joint", {"name": f"{side}_mvp_held_contact_block_fixed", "type": "fixed"})
+    text(joint, "parent", parent_link)
+    text(joint, "child", f"{side}_mvp_held_contact_block")
+
+
 def add_controller(model: ET.Element) -> None:
     plugin = ET.SubElement(
         model,
@@ -217,7 +236,7 @@ def add_controller(model: ET.Element) -> None:
         text(plugin, "position_cmd_max", "80")
 
 
-def load_model(model_sdf: Path) -> ET.Element:
+def load_model(model_sdf: Path, day_id: str) -> ET.Element:
     root = ET.parse(model_sdf).getroot()
     model = root.find("model") if root.tag == "sdf" else root
     if model is None or model.tag != "model":
@@ -241,6 +260,8 @@ def load_model(model_sdf: Path) -> ET.Element:
     add_controller(model)
     add_movable_gripper(model, "left", "0.05 0.10 0.95 1")
     add_movable_gripper(model, "right", "0.95 0.16 0.08 1")
+    if day_id.lower() in {"day02", "d2"}:
+        add_held_contact_block(model, "right")
     return model
 
 
@@ -255,10 +276,11 @@ def add_day_scene(world: ET.Element, day_id: str) -> None:
         add_box_model(world, "d1_forbidden_collision_zone", "0 -0.10 0.55 0 0 0", "0.18 0.55 0.36", "0.95 0.08 0.06 0.55")
         add_box_model(world, "d1_goal_gate", "0 0.35 0.60 0 0 0", "0.75 0.035 0.55", "0.08 0.80 0.25 0.45", collision=False)
     elif day in {"day02", "d2"}:
-        add_box_model(world, "d2_force_wall", "0.32 -0.17 0.56 0 0 0", "0.48 0.08 0.52", "0.10 0.12 0.14 1")
-        add_box_model(world, "d2_compliance_pad", "0.32 -0.225 0.56 0 0 0", "0.32 0.045 0.28", "0.10 0.35 0.95 1")
-        add_box_model(world, "d2_contact_face", "0.32 -0.253 0.56 0 0 0", "0.36 0.010 0.32", "0.95 0.16 0.10 0.70", collision=False)
-        add_box_model(world, "d2_relief_window", "0.18 -0.25 0.68 0 0 0", "0.26 0.025 0.24", "0.10 0.85 0.35 0.55", collision=False)
+        add_box_model(world, "d2_force_wall", "0.60 -0.180 0.66 0 0 0", "0.36 0.060 0.38", "0.10 0.12 0.14 1")
+        add_box_model(world, "d2_compliance_pad", "0.60 -0.150 0.66 0 0 0", "0.26 0.018 0.26", "0.10 0.35 0.95 1")
+        add_box_model(world, "d2_contact_face", "0.60 -0.137 0.66 0 0 0", "0.30 0.008 0.30", "0.95 0.16 0.10 0.70", collision=False)
+        add_box_model(world, "d2_probe_path_marker", "0.60 -0.055 0.66 0 0 0", "0.020 0.120 0.020", "0.96 0.78 0.16 0.65", collision=False)
+        add_box_model(world, "d2_relief_window", "0.60 -0.065 0.76 0 0 0", "0.28 0.025 0.16", "0.10 0.85 0.35 0.55", collision=False)
     elif day in {"day03", "d3"}:
         add_box_model(world, "d3_vision_board", "-0.34 0.38 0.68 0 0 0", "0.34 0.035 0.30", "0.05 0.09 0.12 1")
         add_box_model(world, "d3_green_target", "-0.34 0.35 0.70 0 0 0", "0.10 0.018 0.10", "0.05 0.95 0.25 1")
@@ -306,7 +328,7 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
 
-    model = load_model(Path(args.model_sdf))
+    model = load_model(Path(args.model_sdf), args.day_id)
     build_world(model, args.day_id, Path(args.output))
     return 0
 

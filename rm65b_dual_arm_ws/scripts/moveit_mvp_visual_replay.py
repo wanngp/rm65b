@@ -438,7 +438,7 @@ class MoveItMvpReplay(Node):
                 grip_alpha = _smootherstep((alpha - 0.5) * 2.0)
                 position = closed_position + (open_position - closed_position) * grip_alpha
         elif day in {"day02", "d2"}:
-            position = 0.001 if ("press" in phase or "relief" in phase) else 0.012
+            position = 0.002
         else:
             position = 0.010
         msg = Float64(data=float(position))
