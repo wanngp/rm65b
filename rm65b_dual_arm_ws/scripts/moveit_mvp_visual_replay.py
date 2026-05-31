@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import time
 from pathlib import Path
 
@@ -22,7 +21,6 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 LEFT_JOINTS = [f"left_joint{i}" for i in range(1, 7)]
 RIGHT_JOINTS = [f"right_joint{i}" for i in range(1, 7)]
 DUAL_JOINTS = LEFT_JOINTS + RIGHT_JOINTS
-LOCAL_JOINTS = [f"joint{i}" for i in range(1, 7)]
 
 HOME = (0.0, -0.35, 0.65, 0.0, 0.90, 0.0)
 
@@ -91,35 +89,17 @@ def stage_targets(day_id: str) -> list[tuple[str, tuple[float, ...], tuple[float
     ]
 
 
-def _duration_to_float(duration) -> float:
-    return float(duration.sec) + float(duration.nanosec) / 1e9
-
-
-def _trajectory_msg(points: list[dict], side: str, time_offset: float) -> JointTrajectory:
+def _trajectory_msg(points: list[dict], side: str) -> JointTrajectory:
     msg = JointTrajectory()
-    msg.joint_names = list(LOCAL_JOINTS)
+    msg.joint_names = list(LEFT_JOINTS if side == "left" else RIGHT_JOINTS)
     for frame in points:
         point = JointTrajectoryPoint()
         point.positions = [float(v) for v in frame[side]]
-        seconds = max(float(frame["time_from_start"]) + time_offset, 0.25)
+        seconds = max(float(frame["time_from_start"]), 0.0)
         point.time_from_start.sec = int(seconds)
         point.time_from_start.nanosec = int((seconds - int(seconds)) * 1e9)
         msg.points.append(point)
     return msg
-
-
-def _trajectory_to_gz_pbtxt(msg: JointTrajectory) -> str:
-    lines = [f'joint_names: "{name}"' for name in msg.joint_names]
-    for point in msg.points:
-        parts = [f"positions: {value:.6f}" for value in point.positions]
-        parts.append(
-            "time_from_start { "
-            f"sec: {int(point.time_from_start.sec)} "
-            f"nsec: {int(point.time_from_start.nanosec)} "
-            "}"
-        )
-        lines.append("points { " + " ".join(parts) + " }")
-    return "\n".join(lines)
 
 
 def _sample(points: list[dict], elapsed: float) -> dict:
@@ -150,17 +130,15 @@ class MoveItMvpReplay(Node):
         super().__init__("rm65b_moveit_mvp_visual_replay")
         self.args = args
         self.client = ActionClient(self, MoveGroup, "/move_action")
-        self.left_pub = self.create_publisher(JointTrajectory, "/model/left_rm65b/joint_trajectory", 10)
-        self.right_pub = self.create_publisher(JointTrajectory, "/model/right_rm65b/joint_trajectory", 10)
         self.joint_state_pub = self.create_publisher(JointState, "/joint_states", 10)
+        self.left_traj_pub = self.create_publisher(JointTrajectory, "/dual_arm_planning/left_joint_trajectory", 10)
+        self.right_traj_pub = self.create_publisher(JointTrajectory, "/dual_arm_planning/right_joint_trajectory", 10)
         self.phase_pub = self.create_publisher(String, "/dual_arm_planning/phase", 10)
         self.day_status_pub = self.create_publisher(String, "/acceptance/day_status", 10)
         self.force_state_pub = self.create_publisher(String, "/force_control/state", 10)
         self.force_target_pub = self.create_publisher(WrenchStamped, "/force_control/target_wrench", 10)
         self.force_error_pub = self.create_publisher(WrenchStamped, "/force_control/wrench_error", 10)
         self.admittance_pub = self.create_publisher(Float64, "/force_control/admittance_offset", 10)
-        self.upper_pub = self.create_publisher(Float64, "/rm65b_gripper/upper_finger_cmd", 10)
-        self.lower_pub = self.create_publisher(Float64, "/rm65b_gripper/lower_finger_cmd", 10)
 
     def wait_for_moveit(self) -> None:
         if not self.client.wait_for_server(timeout_sec=self.args.wait_timeout):
@@ -313,61 +291,24 @@ class MoveItMvpReplay(Node):
         (out / "mvp_moveit_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
     def replay(self, points: list[dict]) -> None:
-        left = _trajectory_msg(points, "left", self.args.time_offset)
-        right = _trajectory_msg(points, "right", self.args.time_offset)
-        plan_duration = float(points[-1]["time_from_start"]) + self.args.time_offset
+        left = _trajectory_msg(points, "left")
+        right = _trajectory_msg(points, "right")
+        plan_duration = float(points[-1]["time_from_start"])
         run_duration = self.args.duration if self.args.duration > 0 else plan_duration + 2.0
         started = time.monotonic()
-        next_send = started
-        send_interval = max(plan_duration + 0.5, 1.0)
+        next_trajectory_publish = started
 
         while rclpy.ok() and time.monotonic() - started <= run_duration:
             now = time.monotonic()
-            if now >= next_send:
-                self._send_trajectories(left, right)
-                next_send = now + send_interval
+            if now >= next_trajectory_publish:
+                self.left_traj_pub.publish(left)
+                self.right_traj_pub.publish(right)
+                next_trajectory_publish = now + 1.0
             loop_elapsed = (now - started) % max(plan_duration, 0.1)
-            state = _sample(points, max(loop_elapsed - self.args.time_offset, 0.0))
+            state = _sample(points, loop_elapsed)
             self._publish_observable_state(state, loop_elapsed)
             rclpy.spin_once(self, timeout_sec=0.01)
             time.sleep(1.0 / max(self.args.state_rate_hz, 1.0))
-
-    def _send_trajectories(self, left: JointTrajectory, right: JointTrajectory) -> None:
-        if self.args.direct_gz:
-            self._send_direct_gz("/model/left_rm65b/joint_trajectory", left)
-            self._send_direct_gz("/model/right_rm65b/joint_trajectory", right)
-            self._send_direct_gripper(0.0 if self.args.day_id.lower() in {"day02", "d2"} else 0.018)
-        deadline = time.monotonic() + self.args.publish_burst_s
-        while time.monotonic() < deadline and rclpy.ok():
-            self.left_pub.publish(left)
-            self.right_pub.publish(right)
-            self._publish_gripper_ros(0.0 if self.args.day_id.lower() in {"day02", "d2"} else 0.018)
-            rclpy.spin_once(self, timeout_sec=0.01)
-            time.sleep(0.05)
-
-    def _send_direct_gz(self, topic: str, msg: JointTrajectory) -> None:
-        subprocess.run(
-            ["gz", "topic", "-t", topic, "-m", "gz.msgs.JointTrajectory", "-p", _trajectory_to_gz_pbtxt(msg)],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=3.0,
-        )
-
-    def _publish_gripper_ros(self, position: float) -> None:
-        msg = Float64(data=float(position))
-        self.upper_pub.publish(msg)
-        self.lower_pub.publish(msg)
-
-    def _send_direct_gripper(self, position: float) -> None:
-        for topic in ("/rm65b_gripper/upper_finger_cmd", "/rm65b_gripper/lower_finger_cmd"):
-            subprocess.run(
-                ["gz", "topic", "-t", topic, "-m", "gz.msgs.Double", "-p", f"data: {position:.6f}"],
-                check=False,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=1.0,
-            )
 
     def _publish_observable_state(self, state: dict, elapsed: float) -> None:
         stamp = self.get_clock().now().to_msg()
@@ -424,11 +365,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--acceleration-scaling", type=float, default=0.45)
     parser.add_argument("--joint-tolerance", type=float, default=0.015)
     parser.add_argument("--segment-duration", type=float, default=3.0)
-    parser.add_argument("--time-offset", type=float, default=0.30)
-    parser.add_argument("--publish-burst-s", type=float, default=1.0)
     parser.add_argument("--state-rate-hz", type=float, default=20.0)
-    parser.add_argument("--no-direct-gz", dest="direct_gz", action="store_false")
-    parser.set_defaults(direct_gz=True)
     return parser.parse_args()
 
 
