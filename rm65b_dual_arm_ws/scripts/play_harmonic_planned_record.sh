@@ -88,8 +88,8 @@ LEFT_EIH_SENSOR_POSE="0.034 0 0.095 0 0.35 0"
 LEFT_EIH_HORIZONTAL_FOV="1.65"
 RIGHT_EIH_HORIZONTAL_FOV="1.65"
 if [[ "$DAY_NORM" == "day03" ]]; then
-  LEFT_EIH_VISUAL_POSE="0.032 0 0.090 0 0.00 0.00"
-  LEFT_EIH_SENSOR_POSE="0.034 0 0.095 0 0.00 0.00"
+  LEFT_EIH_VISUAL_POSE="0.032 0 0.090 0 0.35 0.38"
+  LEFT_EIH_SENSOR_POSE="0.034 0 0.095 0 0.35 0.38"
   LEFT_EIH_HORIZONTAL_FOV="2.20"
 elif [[ "$DAY_NORM" == "day02" || "$DAY_NORM" == "day05" ]]; then
   LEFT_EIH_VISUAL_POSE="0.032 0 0.090 0 0.35 0.75"
@@ -784,7 +784,7 @@ PIDS+=("$!")
 GRIPPER_TARGET_FILE="$OUT_DIR/logs/gripper_target_position.txt"
 GRIPPER_STOP_FILE="$OUT_DIR/logs/stop_gripper_command_stream"
 rm -f "$GRIPPER_STOP_FILE"
-if [[ "$DAY_NORM" == "day02" ]]; then
+if [[ "$DAY_NORM" == "day02" || "$DAY_NORM" == "day03" ]]; then
   printf "0.000\n" > "$GRIPPER_TARGET_FILE"
 else
   printf "0.018\n" > "$GRIPPER_TARGET_FILE"
@@ -1363,7 +1363,7 @@ start_rviz_recording
       ;;
     day03)
       echo "video_acceptance_design: left eye-in-hand camera sees the fixed target at the first frame, /vision/debug_image overlays marker recognition, then visual-servo commands correct the left arm toward the target"
-      echo "hand_eye_transform_gripper_to_camera_m: translation=0.034 0 0.095 rpy=0 0 0 matrix=[[1,0,0,0.034],[0,1,0,0],[0,0,1,0.095],[0,0,0,1]]"
+      echo "hand_eye_transform_gripper_to_camera_m: translation=0.034 0 0.095 rpy=0 0.35 0.38 matrix=[[0.872362,-0.370920,0.318437,0.034],[0.348433,0.928665,0.127188,0],[-0.342898,0,0.939373,0.095],[0,0,0,1]]"
       ;;
     day04)
       echo "video_acceptance_design: show loom rails with material-coded warp/weft yarn, BT states hook/lift/pull/shift/exchange, live joint-state teach recorder, replay YAML, tension PID/compliance telemetry, and contact feedback"

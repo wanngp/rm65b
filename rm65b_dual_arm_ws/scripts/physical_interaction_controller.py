@@ -126,12 +126,12 @@ class PhysicalInteractionController:
             self.fire_at("d5_detach_yarn", progress, 0.86, lambda: self.gz_empty("/rm65b/physical/d4_right_yarn/detach", "d5_yarn_release"))
             self.fire_at("d5_open", progress, 0.88, lambda: self.set_gripper(GRIPPER_OPEN, "d5_release_open"))
         else:
-            self.fire_at("d3_open", progress, 0.02, lambda: self.set_gripper(GRIPPER_OPEN, "d3_vision_open"))
+            self.fire_at("d3_close", progress, 0.02, lambda: self.set_gripper(GRIPPER_CLOSED, "d3_vision_closed"))
 
     def run(self) -> None:
         self.log("physical_interaction_controller started; dynamic set_pose disabled")
-        if self.day in {"day02", "d2"}:
-            self.set_gripper(GRIPPER_CLOSED, "initial_d2_closed")
+        if self.day in {"day02", "d2", "day03", "d3"}:
+            self.set_gripper(GRIPPER_CLOSED, f"initial_{self.day}_closed")
         else:
             self.set_gripper(GRIPPER_OPEN, "initial_open")
         self.initial_detach_all()

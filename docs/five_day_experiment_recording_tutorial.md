@@ -69,8 +69,8 @@ Gazebo 世界坐标单位为米，角度为弧度。
 
 | 项目 | 世界坐标 |
 | --- | --- |
-| 视觉靶标 `vision_target` | `(-0.509, -0.165, 0.531)` |
-| 绿色识别块 `d3_marker_center` | `(-0.509, -0.206, 0.531)` |
+| 视觉靶标 `vision_target` | `(-0.410, -0.335, 0.630), yaw=0` |
+| 绿色识别块 `d3_vision_board/marker_center` | `(-0.410, -0.355, 0.630), yaw=0` |
 | 左臂初始 TCP | `(-0.518, -0.051, 0.575)` |
 | 左手眼相机初始位置 | `(-0.490, -0.114, 0.677)` |
 | 左臂点靶标 TCP | `(-0.523, -0.166, 0.520)` |
@@ -416,6 +416,15 @@ ros2 topic echo /world/rm65b_world/model/d2_contact_pad/link/link/sensor/d2_cont
 
 ### 启动当天动作
 
+先看懂 Day3 画面时，优先运行 live 可视化脚本：
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day03_vision_visual.sh 180
+```
+
+这个脚本只做现场可视化：左手眼相机看绿色靶标，OpenCV 输出 `/vision/debug_image`，左臂做 search-align-approach 循环，夹爪全程闭合。确认画面可读后，再运行下面的正式录制流程。
+
 ```bash
 DAY=day03
 DOMAIN=213
@@ -444,7 +453,7 @@ docs/day03_hand_eye_opencv_visual_servo_report.md
 ### Gazebo 操作
 
 1. 先给整体视角，确认左臂、左夹具手眼相机、视觉板、绿色靶标在同一个工作区。
-2. 拉近 `d3_vision_board`、`d3_marker_center`、`vision_target`，让老师知道靶标不是后期叠加。
+2. 拉近 `d3_vision_board` 的 `marker_center`、`vision_target`，让老师知道靶标不是后期叠加。
 3. 动作开始后，跟随左臂末端，看它从初始观察位移动到靶标附近。
 4. 视觉伺服阶段保持左夹具末端和绿色靶标同时在画面里，不能拍成远处空跑。
 5. 点靶标时，画面要能看到末端接近 `vision_target`；如果接触话题没有数据，不要讲成已经接触。
@@ -475,9 +484,9 @@ ros2 run rqt_image_view rqt_image_view /vision/debug_image
 
 | 矩阵 | 含义 |
 | --- | --- |
-| `^G T_C` | 夹具掌部到相机，平移 `[0.034,0,0.095] m` |
-| `^C T_G` | 相机到夹具掌部，平移 `[-0.034,0,-0.095] m` |
-| `^L6 T_C` | 机械臂 `Link6` 到相机，平移 `[0.052,0,0.095] m` |
+| `^G T_C` | 夹具掌部到相机，平移 `[0.034,0,0.095] m`，rpy `[0,0.35,0.38]` |
+| `^C T_G` | 相机到夹具掌部，是 `^G T_C` 的刚体逆变换 |
+| `^L6 T_C` | 机械臂 `Link6` 到相机，平移 `[0.052,0,0.095] m`，rpy `[0,0.35,0.38]` |
 
 ### RViz 操作
 

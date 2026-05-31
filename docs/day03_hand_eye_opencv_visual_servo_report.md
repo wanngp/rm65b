@@ -23,6 +23,7 @@ Day 3 展示左臂“眼在手上”的视觉闭环能力，不再使用固定�
 | 视觉伺服控制节点 | `rm65b_dual_arm_ws/src/rm65b_vision_guidance/rm65b_vision_guidance/ibvs_controller.py` |
 | Gazebo 视觉伺服适配 | `rm65b_dual_arm_ws/src/rm65b_dual_arm_planning/rm65b_dual_arm_planning/gazebo_trajectory_relays.py` |
 | 视觉伺服计算程序 | `rm65b_dual_arm_ws/scripts/d3_visual_servo_experiment.py` |
+| 快速可视化脚本 | `rm65b_dual_arm_ws/scripts/run_day03_vision_visual.sh` |
 | 启动和录制链路 | `rm65b_dual_arm_ws/scripts/play_harmonic_planned_record.sh` |
 
 ## 2. 手眼相机安装关系
@@ -36,15 +37,15 @@ D3 使用左臂夹具掌部上的 Gazebo eye-in-hand camera，图像话题为：
 录制脚本中 D3 的相机位姿配置为：
 
 ```bash
-LEFT_EIH_SENSOR_POSE="0.034 0 0.095 0 0.00 0.00"
-LEFT_EIH_VISUAL_POSE="0.032 0 0.090 0 0.00 0.00"
+LEFT_EIH_SENSOR_POSE="0.034 0 0.095 0 0.35 0.38"
+LEFT_EIH_VISUAL_POSE="0.032 0 0.090 0 0.35 0.38"
 ```
 
 其中 `LEFT_EIH_SENSOR_POSE` 表示相机传感器坐标系相对左夹具掌部坐标系的位姿，单位为 m 和 rad。D1 报告中已给出机械臂末端 `Link6` 到夹具掌部的安装偏移，本实验沿用：
 
 ```text
 Link6 -> gripper_palm: x=0.018 m, y=0, z=0, rpy=0,0,0
-gripper_palm -> camera: x=0.034 m, y=0, z=0.095 m, rpy=0,0,0
+gripper_palm -> camera: x=0.034 m, y=0, z=0.095 m, rpy=0,0.35,0.38
 ```
 
 ## 3. 手眼标定方法
@@ -63,30 +64,30 @@ A_i X = X B_i
 
 ```text
 ^G T_C =
-[[1, 0, 0, 0.034],
- [0, 1, 0, 0.000],
- [0, 0, 1, 0.095],
- [0, 0, 0, 1.000]]
+[[ 0.872362, -0.370920, 0.318437, 0.034],
+ [ 0.348433,  0.928665, 0.127188, 0.000],
+ [-0.342898,  0.000000, 0.939373, 0.095],
+ [ 0.000000,  0.000000, 0.000000, 1.000]]
 ```
 
 相机到夹具掌部：
 
 ```text
 ^C T_G =
-[[1, 0, 0, -0.034],
- [0, 1, 0,  0.000],
- [0, 0, 1, -0.095],
- [0, 0, 0,  1.000]]
+[[ 0.872362,  0.348433, -0.342898,  0.002915],
+ [-0.370920,  0.928665,  0.000000,  0.012611],
+ [ 0.318437,  0.127188,  0.939373, -0.100067],
+ [ 0.000000,  0.000000,  0.000000,  1.000000]]
 ```
 
 机械臂 `Link6` 到相机：
 
 ```text
 ^L6 T_C =
-[[1, 0, 0, 0.052],
- [0, 1, 0, 0.000],
- [0, 0, 1, 0.095],
- [0, 0, 0, 1.000]]
+[[ 0.872362, -0.370920, 0.318437, 0.052],
+ [ 0.348433,  0.928665, 0.127188, 0.000],
+ [-0.342898,  0.000000, 0.939373, 0.095],
+ [ 0.000000,  0.000000, 0.000000, 1.000]]
 ```
 
 ### 3.2 手眼标定代码
@@ -175,6 +176,17 @@ $OUT/videos/day03_opencv_marker_debug.mp4
 $OUT/screenshots/07_opencv_marker_debug.png
 $OUT/logs/vision_debug_capture_summary.txt
 ```
+
+现场先看效果时，可不进入完整录制流程，直接运行：
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day03_vision_visual.sh 180
+```
+
+该脚本生成高位视觉板和绿色靶标，启动左手眼相机、OpenCV 识别和 IBVS
+topic 链路，并让左臂做 search-align-approach 循环。它用于快速确认
+“相机看见目标”和“左臂在对准目标运动”这两个画面是否清楚。
 
 ## 5. 视觉伺服原理
 

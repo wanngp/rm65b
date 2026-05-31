@@ -146,6 +146,18 @@ mounted on a black target wall. The yellow arrow shows the intended press
 direction, and the side gauge is only a visual cue for admittance/compliance
 response.
 
+To inspect the Day 03 vision-guidance scene with an obvious live motion:
+
+```bash
+cd ~/rm65b_dual_arm_ws
+bash scripts/run_day03_vision_visual.sh 180
+```
+
+This opens Gazebo with the Day 03 vision board. The green target is placed in
+the left eye-in-hand camera view, the vision node publishes `/vision/status`
+and `/vision/target_pose`, and the left arm repeatedly moves through a simple
+search-align-approach cycle while the gripper stays closed.
+
 For a quick live-only MVP with no recording, use the joint sweep demo. It opens
 Gazebo, moves both arms through a large joint-space reciprocating trajectory,
 and toggles the grippers open/closed:

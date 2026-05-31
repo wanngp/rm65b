@@ -13,6 +13,17 @@
 
 ## Simulation evidence
 
+- Live inspection command:
+
+  ```bash
+  cd ~/rm65b_dual_arm_ws
+  bash scripts/run_day03_vision_visual.sh 180
+  ```
+
+- Current live scene: high-contrast Day 3 vision board at the left
+  eye-in-hand camera working height, green target plate, left arm
+  search-align-approach motion, closed gripper, and live `/vision/status`,
+  `/vision/target_pose`, `/visual_servo/twist_cmd` outputs.
 - Final Harmonic output: `outputs/rm65b_gazebo_camera_force_loop_days_harmonic_20260527_2245/day03`
 - Gazebo environment: D3-specific vision board, fiducial-style markers, target
   marker, lighting panel, and Gazebo left camera.

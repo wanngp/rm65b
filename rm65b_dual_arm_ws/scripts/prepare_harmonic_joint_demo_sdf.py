@@ -133,7 +133,57 @@ def add_force_probe(model: ET.Element) -> None:
     text(fixed, "child", "d2_force_probe_tip")
 
 
-def add_joint_trajectory_controller(model: ET.Element) -> None:
+def add_eye_camera(
+    model: ET.Element,
+    *,
+    topic: str,
+    sensor_name: str,
+    color: str,
+    visual_pose: str,
+    sensor_pose: str,
+    horizontal_fov: str,
+) -> None:
+    palm = model.find("link[@name='attached_scaled_gripper_palm']")
+    if palm is None:
+        raise RuntimeError("arm SDF has no attached_scaled_gripper_palm link for eye-in-hand camera")
+    if palm.find(f"sensor[@name='{sensor_name}']") is not None:
+        return
+
+    visual = ET.SubElement(palm, "visual", {"name": f"{sensor_name}_body"})
+    text(visual, "pose", visual_pose)
+    geometry = ET.SubElement(visual, "geometry")
+    box = ET.SubElement(geometry, "box")
+    text(box, "size", "0.024 0.018 0.014")
+    material = ET.SubElement(visual, "material")
+    text(material, "ambient", color)
+    text(material, "diffuse", color)
+
+    sensor = ET.SubElement(palm, "sensor", {"name": sensor_name, "type": "camera"})
+    text(sensor, "pose", sensor_pose)
+    text(sensor, "topic", topic)
+    text(sensor, "always_on", "true")
+    text(sensor, "update_rate", "30")
+    camera = ET.SubElement(sensor, "camera")
+    text(camera, "horizontal_fov", horizontal_fov)
+    image = ET.SubElement(camera, "image")
+    text(image, "width", "640")
+    text(image, "height", "480")
+    text(image, "format", "R8G8B8")
+    clip = ET.SubElement(camera, "clip")
+    text(clip, "near", "0.02")
+    text(clip, "far", "6")
+
+
+def parse_positions(value: str | None) -> tuple[float, ...]:
+    if not value:
+        return INITIAL_POSITIONS
+    parts = tuple(float(part) for part in value.split())
+    if len(parts) != 6:
+        raise ValueError("--initial-positions must contain exactly 6 numeric joint values")
+    return parts
+
+
+def add_joint_trajectory_controller(model: ET.Element, initial_positions: tuple[float, ...]) -> None:
     plugin = ET.SubElement(
         model,
         "plugin",
@@ -142,7 +192,7 @@ def add_joint_trajectory_controller(model: ET.Element) -> None:
             "name": "gz::sim::systems::JointTrajectoryController",
         },
     )
-    for idx, initial in enumerate(INITIAL_POSITIONS, start=1):
+    for idx, initial in enumerate(initial_positions, start=1):
         text(plugin, "joint_name", f"joint{idx}")
         text(plugin, "initial_position", f"{initial:.6f}")
         text(plugin, "position_p_gain", "45")
@@ -154,7 +204,19 @@ def add_joint_trajectory_controller(model: ET.Element) -> None:
         text(plugin, "position_cmd_max", "80")
 
 
-def prepare(src: Path, dst: Path, force_probe: bool = False) -> None:
+def prepare(
+    src: Path,
+    dst: Path,
+    *,
+    force_probe: bool = False,
+    initial_positions: tuple[float, ...] = INITIAL_POSITIONS,
+    eye_camera_topic: str | None = None,
+    eye_camera_name: str = "eye_in_hand_camera",
+    eye_camera_color: str = "0.16 0.36 0.68 1",
+    eye_camera_visual_pose: str = "0.032 0 0.090 0 0.35 0",
+    eye_camera_sensor_pose: str = "0.034 0 0.095 0 0.35 0",
+    eye_camera_horizontal_fov: str = "1.65",
+) -> None:
     tree = ET.parse(src)
     root = tree.getroot()
     model = root.find("model")
@@ -184,7 +246,17 @@ def prepare(src: Path, dst: Path, force_probe: bool = False) -> None:
     add_gripper(model)
     if force_probe:
         add_force_probe(model)
-    add_joint_trajectory_controller(model)
+    if eye_camera_topic:
+        add_eye_camera(
+            model,
+            topic=eye_camera_topic,
+            sensor_name=eye_camera_name,
+            color=eye_camera_color,
+            visual_pose=eye_camera_visual_pose,
+            sensor_pose=eye_camera_sensor_pose,
+            horizontal_fov=eye_camera_horizontal_fov,
+        )
+    add_joint_trajectory_controller(model, initial_positions)
     tree.write(dst, encoding="utf-8", xml_declaration=True)
 
 
@@ -193,8 +265,26 @@ def main() -> int:
     parser.add_argument("--source", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--force-probe", action="store_true")
+    parser.add_argument("--initial-positions")
+    parser.add_argument("--eye-camera-topic")
+    parser.add_argument("--eye-camera-name", default="eye_in_hand_camera")
+    parser.add_argument("--eye-camera-color", default="0.16 0.36 0.68 1")
+    parser.add_argument("--eye-camera-visual-pose", default="0.032 0 0.090 0 0.35 0")
+    parser.add_argument("--eye-camera-sensor-pose", default="0.034 0 0.095 0 0.35 0")
+    parser.add_argument("--eye-camera-horizontal-fov", default="1.65")
     args = parser.parse_args()
-    prepare(Path(args.source), Path(args.output), force_probe=args.force_probe)
+    prepare(
+        Path(args.source),
+        Path(args.output),
+        force_probe=args.force_probe,
+        initial_positions=parse_positions(args.initial_positions),
+        eye_camera_topic=args.eye_camera_topic,
+        eye_camera_name=args.eye_camera_name,
+        eye_camera_color=args.eye_camera_color,
+        eye_camera_visual_pose=args.eye_camera_visual_pose,
+        eye_camera_sensor_pose=args.eye_camera_sensor_pose,
+        eye_camera_horizontal_fov=args.eye_camera_horizontal_fov,
+    )
     return 0
 
 

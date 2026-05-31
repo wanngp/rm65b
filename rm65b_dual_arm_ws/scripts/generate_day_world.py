@@ -149,15 +149,22 @@ def set_camera_fov(world: ET.Element, model_name: str, horizontal_fov: str) -> N
         fov.text = horizontal_fov
 
 
-def add_vision_target(world: ET.Element, pose: str = "-0.08 0.402 0.36 0 0 0") -> None:
+def add_vision_target(world: ET.Element, pose: str = "-0.08 0.402 0.36 0 0 0", face_axis: str = "y") -> None:
     model = ET.SubElement(world, "model", {"name": "vision_target"})
     _text(model, "static", "true")
     _text(model, "pose", pose)
     link = ET.SubElement(model, "link", {"name": "target_link"})
+    face_x = face_axis == "x"
+    collision_size = "0.080 0.18 0.18" if face_x else "0.18 0.080 0.18"
+    plate_size = "0.012 0.16 0.16" if face_x else "0.16 0.012 0.16"
+    center_size = "0.006 0.090 0.090" if face_x else "0.090 0.006 0.090"
+    center_front_pose = "0.014 0 0 0 0 0" if face_x else "0 0.014 0 0 0 0"
+    center_back_pose = "-0.014 0 0 0 0 0" if face_x else "0 -0.014 0 0 0 0"
+    top_size = "0.050 0.060 0.006" if face_x else "0.060 0.050 0.006"
     collision = ET.SubElement(link, "collision", {"name": "target_collision"})
     geometry = ET.SubElement(collision, "geometry")
     box = ET.SubElement(geometry, "box")
-    _text(box, "size", "0.18 0.080 0.18")
+    _text(box, "size", collision_size)
     sensor = ET.SubElement(link, "sensor", {"name": "vision_target_contact", "type": "contact"})
     _text(sensor, "topic", "/contacts/vision_target")
     _text(sensor, "always_on", "true")
@@ -167,26 +174,51 @@ def add_vision_target(world: ET.Element, pose: str = "-0.08 0.402 0.36 0 0 0") -
     visual = ET.SubElement(link, "visual", {"name": "target_plate"})
     geometry = ET.SubElement(visual, "geometry")
     box = ET.SubElement(geometry, "box")
-    _text(box, "size", "0.16 0.012 0.16")
+    _text(box, "size", plate_size)
     _material(visual, "0.03 0.04 0.05 1")
     center = ET.SubElement(link, "visual", {"name": "target_center"})
-    _text(center, "pose", "0 0.014 0 0 0 0")
+    _text(center, "pose", center_front_pose)
     geometry = ET.SubElement(center, "geometry")
     box = ET.SubElement(geometry, "box")
-    _text(box, "size", "0.090 0.006 0.090")
+    _text(box, "size", center_size)
     _material(center, "0.12 1.00 0.48 1")
     back_center = ET.SubElement(link, "visual", {"name": "target_back_center"})
-    _text(back_center, "pose", "0 -0.014 0 0 0 0")
+    _text(back_center, "pose", center_back_pose)
     geometry = ET.SubElement(back_center, "geometry")
     box = ET.SubElement(geometry, "box")
-    _text(box, "size", "0.090 0.006 0.090")
+    _text(box, "size", center_size)
     _material(back_center, "0.12 1.00 0.48 1")
     top_center = ET.SubElement(link, "visual", {"name": "target_top_center"})
     _text(top_center, "pose", "0 0 0.083 0 0 0")
     geometry = ET.SubElement(top_center, "geometry")
     box = ET.SubElement(geometry, "box")
-    _text(box, "size", "0.060 0.050 0.006")
+    _text(box, "size", top_size)
     _material(top_center, "0.12 1.00 0.48 1")
+
+
+def add_day03_board(world: ET.Element, pose: str) -> None:
+    model = ET.SubElement(world, "model", {"name": "d3_vision_board"})
+    _text(model, "static", "true")
+    _text(model, "pose", pose)
+    link = ET.SubElement(model, "link", {"name": "link"})
+
+    collision = ET.SubElement(link, "collision", {"name": "board_collision"})
+    geometry = ET.SubElement(collision, "geometry")
+    box = ET.SubElement(geometry, "box")
+    _text(box, "size", "0.42 0.030 0.34")
+
+    def local_box(name: str, local_pose: str, size: str, color: str) -> None:
+        visual = ET.SubElement(link, "visual", {"name": name})
+        _text(visual, "pose", local_pose)
+        geometry = ET.SubElement(visual, "geometry")
+        box = ET.SubElement(geometry, "box")
+        _text(box, "size", size)
+        _material(visual, color)
+
+    local_box("board_plate", "0 0 0 0 0 0", "0.42 0.030 0.34", "0.92 0.92 0.86 1")
+    local_box("marker_center", "0 0.022 0 0 0 0", "0.145 0.018 0.145", "0.12 1.00 0.48 1")
+    local_box("marker_left", "-0.093 0.022 0.078 0 0 0", "0.060 0.014 0.060", "0.08 0.32 0.90 1")
+    local_box("marker_right", "0.093 0.022 -0.078 0 0 0", "0.060 0.014 0.060", "0.88 0.18 0.12 1")
 
 
 def add_weft_yarn(world: ET.Element, pose: str = "0.00 0.47 0.35 0 0 0") -> None:
@@ -257,12 +289,14 @@ def add_day02(world: ET.Element) -> None:
 
 
 def add_day03(world: ET.Element) -> None:
-    add_box_model(world, "d3_vision_board", "-0.509 -0.190 0.531 0 0 0", "0.38 0.030 0.30", "0.92 0.92 0.86 1", True, False)
-    add_box_model(world, "d3_marker_center", "-0.509 -0.206 0.531 0 0 0", "0.130 0.018 0.130", "0.12 1.00 0.48 1", False, False)
-    add_box_model(world, "d3_marker_left", "-0.594 -0.206 0.596 0 0 0", "0.055 0.014 0.055", "0.08 0.32 0.90 1")
-    add_box_model(world, "d3_marker_right", "-0.424 -0.206 0.466 0 0 0", "0.055 0.014 0.055", "0.88 0.18 0.12 1")
-    add_box_model(world, "d3_lighting_panel", "-0.509 -0.355 0.771 0 0 0", "0.52 0.035 0.045", "1.00 0.94 0.68 1")
-    add_vision_target(world, "-0.509 -0.165 0.531 0 0 0")
+    x = -0.410
+    y = -0.355
+    z = 0.630
+    yaw = 0.0
+    front_y = y + 0.020
+    add_day03_board(world, f"{x:.3f} {y:.3f} {z:.3f} 0 0 {yaw}")
+    add_box_model(world, "d3_lighting_panel", f"{x:.3f} -0.355 {z + 0.250:.3f} 0 0 {yaw}", "0.56 0.035 0.050", "1.00 0.94 0.68 1")
+    add_vision_target(world, f"{x:.3f} {front_y:.3f} {z:.3f} 0 0 {yaw}")
 
 
 def add_day04(world: ET.Element) -> None:

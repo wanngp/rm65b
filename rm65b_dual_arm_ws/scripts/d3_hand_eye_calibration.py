@@ -118,7 +118,7 @@ def main() -> int:
     parser.add_argument(
         "--gripper-to-camera-pose",
         type=parse_pose,
-        default=parse_pose("0.034 0 0.095 0 0 0"),
+        default=parse_pose("0.034 0 0.095 0 0.35 0.38"),
         help="Configured Gazebo eye-in-hand sensor pose in gripper frame",
     )
     parser.add_argument(
