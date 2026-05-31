@@ -8,7 +8,8 @@ DAY_ID="${1:-day01}"
 DOMAIN_ID="${2:-211}"
 OUT_ROOT="${3:-$HOME/rm65b_mvp_visual_$(date +%Y%m%d_%H%M%S)}"
 DURATION="${MVP_DURATION:-45}"
-RVIZ_START_DELAY="${RVIZ_START_DELAY:-3}"
+OPEN_RVIZ="${OPEN_RVIZ:-0}"
+START_DELAY="${MVP_START_DELAY:-5}"
 
 source_setup_file() {
   local setup_file="$1"
@@ -56,19 +57,50 @@ mkdir -p "$OUT_DIR/logs"
   echo "Missing $WORKSPACE/install/setup.bash. Build the workspace first." >&2
   exit 1
 }
+command -v gz >/dev/null 2>&1 || {
+  echo "Missing gz command." >&2
+  exit 1
+}
 
 source_setup_file /opt/ros/humble/setup.bash
 source_setup_file "$WORKSPACE/install/setup.bash"
 
 export ROS_DOMAIN_ID="$DOMAIN_ID"
+export GZ_PARTITION="${GZ_PARTITION:-rm65b_mvp_${DAY_ID}_${DOMAIN_ID}_$$}"
+
+DUAL_URDF="$WORKSPACE/install/rm65b_dual_arm_moveit_config/share/rm65b_dual_arm_moveit_config/config/rm65b_dual_arm.urdf"
+if [[ ! -f "$DUAL_URDF" ]]; then
+  DUAL_URDF="$WORKSPACE/src/rm65b_dual_arm_moveit_config/config/rm65b_dual_arm.urdf"
+fi
+MESH_ROOT="$WORKSPACE/install/rm_description/share/rm_description/meshes"
+if [[ ! -d "$MESH_ROOT" ]]; then
+  MESH_ROOT="$WORKSPACE/src/ros2_rm_robot/rm_description/meshes"
+fi
+
+DUAL_URDF_RUNTIME="$OUT_DIR/logs/rm65b_dual_arm_mvp_file_meshes.urdf"
+DUAL_MODEL_SDF="$OUT_DIR/logs/rm65b_dual_arm_mvp_model.sdf"
+WORLD_RUNTIME="$OUT_DIR/logs/rm65b_dual_arm_mvp_world.sdf"
+
+sed "s#package://rm_description/meshes#file://$MESH_ROOT#g" "$DUAL_URDF" > "$DUAL_URDF_RUNTIME"
+gz sdf -p "$DUAL_URDF_RUNTIME" > "$DUAL_MODEL_SDF"
+python3 "$SCRIPT_DIR/generate_moveit_mvp_gazebo_world.py" \
+  --model-sdf "$DUAL_MODEL_SDF" \
+  --day-id "$DAY_ID" \
+  --output "$WORLD_RUNTIME"
 
 echo "workspace=$WORKSPACE"
 echo "day=$DAY_ID"
 echo "ros_domain_id=$ROS_DOMAIN_ID"
+echo "gz_partition=$GZ_PARTITION"
 echo "output=$OUT_DIR"
 echo "duration=$DURATION"
-echo "visual_stack=MoveIt/RViz only; no Gazebo world, no generated scene, no per-arm spawn" \
+echo "visual_stack=Gazebo single dual_rm65b_mvp model; no legacy world generator; no per-arm spawn" \
   | tee "$OUT_DIR/logs/mvp_visual_mode.txt"
+
+ros2 run ros_gz_bridge parameter_bridge \
+  /model/dual_rm65b_mvp/joint_trajectory@trajectory_msgs/msg/JointTrajectory]gz.msgs.JointTrajectory \
+  > "$OUT_DIR/logs/ros_gz_bridge.log" 2>&1 &
+PIDS+=("$!")
 
 ros2 launch rm65b_dual_arm_moveit_config move_group.launch.py \
   use_sim_time:=false \
@@ -77,15 +109,31 @@ ros2 launch rm65b_dual_arm_moveit_config move_group.launch.py \
 PIDS+=("$!")
 
 if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+  gz sim -v 3 -r "$WORLD_RUNTIME" > "$OUT_DIR/logs/gz_sim.log" 2>&1 &
+  PIDS+=("$!")
+  GZ_PID="$!"
+else
+  gz sim -v 3 -r -s "$WORLD_RUNTIME" > "$OUT_DIR/logs/gz_sim.log" 2>&1 &
+  PIDS+=("$!")
+  GZ_PID="$!"
+  echo "DISPLAY/WAYLAND_DISPLAY is not set; Gazebo runs server-only." | tee "$OUT_DIR/logs/gz_gui.log"
+fi
+
+sleep 2
+if ! kill -0 "$GZ_PID" >/dev/null 2>&1; then
+  echo "Gazebo exited immediately. See $OUT_DIR/logs/gz_sim.log" >&2
+  tail -n 80 "$OUT_DIR/logs/gz_sim.log" >&2 || true
+  exit 3
+fi
+
+if [[ "$OPEN_RVIZ" == "1" && ( -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ) ]]; then
   ros2 launch rm65b_dual_arm_moveit_config moveit_rviz.launch.py \
     use_sim_time:=false \
     > "$OUT_DIR/logs/rviz.log" 2>&1 &
   PIDS+=("$!")
-else
-  echo "DISPLAY/WAYLAND_DISPLAY is not set; RViz was not opened." | tee "$OUT_DIR/logs/rviz.log"
 fi
 
-sleep "$RVIZ_START_DELAY"
+sleep "$START_DELAY"
 
 python3 "$SCRIPT_DIR/moveit_mvp_visual_replay.py" \
   --day-id "$DAY_ID" \
@@ -93,6 +141,6 @@ python3 "$SCRIPT_DIR/moveit_mvp_visual_replay.py" \
   --output-dir "$OUT_DIR/logs" \
   > "$OUT_DIR/logs/moveit_mvp_visual_replay.log" 2>&1
 
-echo "MVP MoveIt/RViz visual complete."
+echo "MVP MoveIt/Gazebo visual complete."
 echo "output=$OUT_DIR"
 echo "summary=$OUT_DIR/logs/mvp_moveit_summary.json"

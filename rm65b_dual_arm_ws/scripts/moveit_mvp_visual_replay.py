@@ -131,6 +131,7 @@ class MoveItMvpReplay(Node):
         self.args = args
         self.client = ActionClient(self, MoveGroup, "/move_action")
         self.joint_state_pub = self.create_publisher(JointState, "/joint_states", 10)
+        self.gazebo_traj_pub = self.create_publisher(JointTrajectory, args.gazebo_topic, 10)
         self.left_traj_pub = self.create_publisher(JointTrajectory, "/dual_arm_planning/left_joint_trajectory", 10)
         self.right_traj_pub = self.create_publisher(JointTrajectory, "/dual_arm_planning/right_joint_trajectory", 10)
         self.phase_pub = self.create_publisher(String, "/dual_arm_planning/phase", 10)
@@ -293,6 +294,7 @@ class MoveItMvpReplay(Node):
     def replay(self, points: list[dict]) -> None:
         left = _trajectory_msg(points, "left")
         right = _trajectory_msg(points, "right")
+        combined = self._combined_trajectory(points)
         plan_duration = float(points[-1]["time_from_start"])
         run_duration = self.args.duration if self.args.duration > 0 else plan_duration + 2.0
         started = time.monotonic()
@@ -301,6 +303,7 @@ class MoveItMvpReplay(Node):
         while rclpy.ok() and time.monotonic() - started <= run_duration:
             now = time.monotonic()
             if now >= next_trajectory_publish:
+                self.gazebo_traj_pub.publish(combined)
                 self.left_traj_pub.publish(left)
                 self.right_traj_pub.publish(right)
                 next_trajectory_publish = now + 1.0
@@ -309,6 +312,18 @@ class MoveItMvpReplay(Node):
             self._publish_observable_state(state, loop_elapsed)
             rclpy.spin_once(self, timeout_sec=0.01)
             time.sleep(1.0 / max(self.args.state_rate_hz, 1.0))
+
+    def _combined_trajectory(self, points: list[dict]) -> JointTrajectory:
+        msg = JointTrajectory()
+        msg.joint_names = list(DUAL_JOINTS)
+        for frame in points:
+            point = JointTrajectoryPoint()
+            point.positions = [float(v) for v in frame["left"] + frame["right"]]
+            seconds = max(float(frame["time_from_start"]), 0.0)
+            point.time_from_start.sec = int(seconds)
+            point.time_from_start.nanosec = int((seconds - int(seconds)) * 1e9)
+            msg.points.append(point)
+        return msg
 
     def _publish_observable_state(self, state: dict, elapsed: float) -> None:
         stamp = self.get_clock().now().to_msg()
@@ -366,6 +381,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--joint-tolerance", type=float, default=0.015)
     parser.add_argument("--segment-duration", type=float, default=3.0)
     parser.add_argument("--state-rate-hz", type=float, default=20.0)
+    parser.add_argument("--gazebo-topic", default="/model/dual_rm65b_mvp/joint_trajectory")
     return parser.parse_args()
 
 

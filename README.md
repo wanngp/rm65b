@@ -79,8 +79,9 @@ bash scripts/run_day_visual.sh day01
 For one-by-one D1-D5 visual acceptance, run `scripts/run_day_visual.sh day01`
 through `day05`. This path uses the dual-arm MoveIt configuration; the older
 direct Day 02/Day 03 visual scripts are diagnostic-only wrappers by default.
-On the MVP visual branch, `run_day_visual.sh` is only the fast MoveIt/RViz
-runner: no Gazebo world generation and no separate left/right arm spawning.
+On the MVP visual branch, `run_day_visual.sh` is a fast MoveIt/Gazebo runner:
+it generates one custom Gazebo world containing a single `dual_rm65b_mvp` model,
+not two separately spawned arms.
 
 ## Simulation-safe launch
 

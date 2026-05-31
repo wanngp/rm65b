@@ -115,22 +115,22 @@ bash scripts/bootstrap_vmware_ubuntu.sh \
   --build
 ```
 
-Start with Day 01 visual inspection. On the MVP visual branch this opens RViz,
-starts MoveIt `move_group`, and writes logs under `~/rm65b_visual_*`:
+Start with Day 01 visual inspection. On the MVP visual branch this opens
+Gazebo, starts MoveIt `move_group`, and writes logs under `~/rm65b_visual_*`:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day01
 ```
 
-This command uses the clean MoveIt/RViz runner:
+This command uses the clean MoveIt/Gazebo runner:
 
-- D1: MoveIt plans a clear dual-arm straight-line sweep and RViz shows the
-  single `rm65b_dual_arm` model moving from `/joint_states`.
+- D1: MoveIt plans a clear dual-arm straight-line sweep and Gazebo shows one
+  `dual_rm65b_mvp` model moving through a custom lane/collision-zone scene.
 - D2: MoveIt plans approach/press/release stages, with visible compliant relief
   and `/force_control/*` state output.
-- The MVP runner does not start Gazebo, generate legacy worlds, or spawn left
-  and right arms as separate models.
+- The MVP runner does not use the legacy world generator and does not spawn
+  left and right arms as separate models.
 
 To inspect the Day 02 force-compliance motion through the required MoveIt path:
 
@@ -139,9 +139,10 @@ cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day02
 ```
 
-In the MVP branch Day 02 is intentionally minimal: RViz shows the right arm
-approach, press, perform a compliant relief motion, and press again. The
-force/admittance evidence is published on `/force_control/*`.
+In the MVP branch Day 02 is intentionally minimal: Gazebo shows the right arm
+approach, press, perform a compliant relief motion, and press again against a
+custom force-pad scene. The force/admittance evidence is published on
+`/force_control/*`.
 
 To inspect the Day 03 vision-guidance scene through the required MoveIt path:
 
@@ -150,16 +151,17 @@ cd ~/rm65b_dual_arm_ws
 bash scripts/run_day_visual.sh day03
 ```
 
-In the MVP branch Day 03 is also RViz-only: MoveIt plans the camera-view,
-align, touch, and retract stages on the same single dual-arm robot model.
+In the MVP branch Day 03 uses the same single Gazebo dual-arm model with a
+custom vision-board scene while MoveIt plans the camera-view, align, touch, and
+retract stages.
 
 `run_day02_force_visual.sh` and `run_day03_vision_visual.sh` are now diagnostic
 entrypoints only. By default they delegate to `run_day_visual.sh day02/day03`
 so the accepted D1-D5 visual path always uses `rm65b_dual_arm_moveit_config`
 and the `dual_arms` MoveIt group.
 
-For a legacy Gazebo-only diagnostic, use the joint sweep demo. It is separate
-from the MoveIt/RViz MVP path:
+For a legacy non-MoveIt Gazebo diagnostic, use the joint sweep demo. It is
+separate from the MoveIt/Gazebo MVP path:
 
 ```bash
 cd ~/rm65b_dual_arm_ws
@@ -169,11 +171,11 @@ bash scripts/run_joint_sweep_visual.sh 180
 The first argument is the demo duration in seconds. Use `0` to run until
 interrupted.
 
-Expected MVP result: an RViz window opens with one `rm65b_dual_arm` RobotModel.
-terminal prints the output directory, for example
-`~/rm65b_visual_20260530_173000/day01`. If RViz does not open, first check
-that `echo $DISPLAY` or `echo $WAYLAND_DISPLAY` is non-empty, then inspect
-`$OUT/logs/rviz.log` and `$OUT/logs/moveit_mvp_visual_replay.log`.
+Expected MVP result: a Gazebo window opens with one `dual_rm65b_mvp` model and
+the day-specific custom scene. The terminal prints the output directory, for
+example `~/rm65b_visual_20260530_173000/day01`. If Gazebo does not open, first
+check that `echo $DISPLAY` or `echo $WAYLAND_DISPLAY` is non-empty, then inspect
+`$OUT/logs/gz_sim.log` and `$OUT/logs/moveit_mvp_visual_replay.log`.
 In WSL, GUI support depends on WSLg or an external X server; VMware Ubuntu with
 a desktop session is the preferred visual environment.
 
