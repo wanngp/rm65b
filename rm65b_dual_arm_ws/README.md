@@ -215,7 +215,21 @@ RECORD_RVIZ=1 CAPTURE_TIMEOUT=420 \
 For a quick launch-only system check without recording:
 
 ```bash
-ros2 launch rm65b_dual_arm_bringup full_system.launch.py use_hardware:=false
+ros2 launch rm65b_dual_arm_bringup full_system.launch.py \
+  use_hardware:=false \
+  use_sim_time:=true \
+  enable_move_group:=true \
+  moveit_allow_trajectory_execution:=false
+```
+
+In another terminal, confirm MoveIt is available and generate a dry planning
+artifact:
+
+```bash
+ros2 action list | grep /move_action
+ros2 run rm65b_dual_arm_planning dual_moveit_plan_client \
+  --day-id day03 \
+  --output-dir outputs/moveit_smoke/day03
 ```
 
 Do not run with `use_hardware:=true` until robot IPs, TCP frames, gripper

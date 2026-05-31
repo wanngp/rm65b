@@ -11,6 +11,7 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>rm_driver</exec_depend>
   <exec_depend>rm65b_gripper_control</exec_depend>
+  <exec_depend>rm65b_dual_arm_moveit_config</exec_depend>
   <exec_depend>rm65b_safety</exec_depend>
   <exec_depend>rm65b_vision_guidance</exec_depend>
   <exec_depend>rm65b_dual_arm_planning</exec_depend>

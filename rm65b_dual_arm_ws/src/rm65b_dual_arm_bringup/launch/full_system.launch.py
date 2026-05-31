@@ -2,7 +2,7 @@ from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -16,6 +16,26 @@ def _include(package, launch_file, **kwargs):
         PythonLaunchDescriptionSource(str(path)),
         launch_arguments=kwargs.items(),
     )
+
+
+def _include_move_group(context, *args, **kwargs):
+    enabled = LaunchConfiguration("enable_move_group").perform(context).lower()
+    if enabled not in {"1", "true", "yes", "on"}:
+        return []
+
+    package = LaunchConfiguration("moveit_config_package").perform(context)
+    launch_file = Path(get_package_share_directory(package)) / "launch" / "move_group.launch.py"
+    return [
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(str(launch_file)),
+            launch_arguments={
+                "allow_trajectory_execution": LaunchConfiguration(
+                    "moveit_allow_trajectory_execution"
+                ).perform(context),
+                "use_sim_time": LaunchConfiguration("use_sim_time").perform(context),
+            }.items(),
+        )
+    ]
 
 
 def generate_launch_description():
@@ -51,6 +71,9 @@ def generate_launch_description():
         [
             DeclareLaunchArgument("use_hardware", default_value="false"),
             DeclareLaunchArgument("use_sim_time", default_value="false"),
+            DeclareLaunchArgument("enable_move_group", default_value="true"),
+            DeclareLaunchArgument("moveit_config_package", default_value="rm65b_dual_arm_moveit_config"),
+            DeclareLaunchArgument("moveit_allow_trajectory_execution", default_value="false"),
             DeclareLaunchArgument("enable_vision", default_value="true"),
             DeclareLaunchArgument("enable_planning", default_value="true"),
             DeclareLaunchArgument("enable_gazebo_camera_info", default_value="true"),
@@ -81,6 +104,7 @@ def generate_launch_description():
                 "dual_rm_drivers.launch.py",
                 use_hardware=use_hardware,
             ),
+            OpaqueFunction(function=_include_move_group),
             Node(
                 package="rm65b_gripper_control",
                 executable="gripper_action_server",

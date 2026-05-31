@@ -147,6 +147,7 @@ $workspaceRequiredFiles = @(
     "src/rm65b_dual_arm_bringup/launch/full_system.launch.py",
     "src/rm65b_dual_arm_bringup/config/dual_arm_frames.yaml",
     "src/rm65b_dual_arm_moveit_config/config/rm65b_dual_arm.urdf",
+    "src/rm65b_dual_arm_moveit_config/launch/move_group.launch.py",
     "src/rm65b_dual_arm_planning/package.xml",
     "src/rm65b_gripper_control/package.xml",
     "src/rm65b_safety/package.xml",
@@ -311,6 +312,8 @@ command -v colcon >/dev/null 2>&1 && echo COLCON=ok || echo COLCON=missing
 command -v python3 >/dev/null 2>&1 && echo PYTHON3=ok || echo PYTHON3=missing
 command -v gz >/dev/null 2>&1 && echo GAZEBO_GZ=ok || echo GAZEBO_GZ=missing
 command -v ffmpeg >/dev/null 2>&1 && echo FFMPEG=ok || echo FFMPEG=missing
+ros2 pkg prefix moveit_ros_move_group >/dev/null 2>&1 && echo MOVEIT_MOVE_GROUP=ok || echo MOVEIT_MOVE_GROUP=missing
+ros2 pkg prefix moveit_configs_utils >/dev/null 2>&1 && echo MOVEIT_CONFIGS_UTILS=ok || echo MOVEIT_CONFIGS_UTILS=missing
 '@
     $wslArgs = @()
     if (![string]::IsNullOrWhiteSpace($WslDistro)) {

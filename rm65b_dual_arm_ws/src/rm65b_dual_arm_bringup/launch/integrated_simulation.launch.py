@@ -141,19 +141,6 @@ def _spawn_robots(context, *args, **kwargs):
     ]
 
 
-def _include_move_group(context, *args, **kwargs):
-    if LaunchConfiguration("enable_move_group").perform(context).lower() not in {"1", "true", "yes", "on"}:
-        return []
-    package = LaunchConfiguration("moveit_config_package").perform(context)
-    launch_file = Path(get_package_share_directory(package)) / "launch" / "move_group.launch.py"
-    return [
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(str(launch_file)),
-            launch_arguments={"allow_trajectory_execution": "false"}.items(),
-        )
-    ]
-
-
 def generate_launch_description():
     bringup_share = Path(get_package_share_directory("rm65b_dual_arm_bringup"))
     full_system = bringup_share / "launch" / "full_system.launch.py"
@@ -217,12 +204,14 @@ def generate_launch_description():
                 name="ros_gz_bridge",
                 output="screen",
             ),
-            OpaqueFunction(function=_include_move_group),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(str(full_system)),
                 launch_arguments={
                     "use_hardware": "false",
                     "use_sim_time": use_sim_time,
+                    "enable_move_group": LaunchConfiguration("enable_move_group"),
+                    "moveit_config_package": LaunchConfiguration("moveit_config_package"),
+                    "moveit_allow_trajectory_execution": "false",
                     "enable_vision": "true",
                     "enable_planning": "true",
                     "enable_gazebo_camera_info": "true",

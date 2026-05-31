@@ -33,6 +33,7 @@ workspace_required=(
   src/rm65b_dual_arm_bringup/launch/full_system.launch.py
   src/rm65b_dual_arm_bringup/config/dual_arm_frames.yaml
   src/rm65b_dual_arm_moveit_config/config/rm65b_dual_arm.urdf
+  src/rm65b_dual_arm_moveit_config/launch/move_group.launch.py
   src/rm65b_dual_arm_planning/package.xml
   src/rm65b_gripper_control/package.xml
   src/rm65b_safety/package.xml
@@ -411,6 +412,11 @@ install_apt_deps_if_requested() {
     ros-humble-ros2-control
     ros-humble-ros2-controllers
     ros-humble-moveit
+    ros-humble-moveit-configs-utils
+    ros-humble-moveit-kinematics
+    ros-humble-moveit-planners-ompl
+    ros-humble-moveit-ros-move-group
+    ros-humble-moveit-ros-visualization
     ros-humble-ros-gzharmonic
     ros-humble-ros-gzharmonic-bridge
     ros-humble-ros-gzharmonic-image
@@ -519,9 +525,11 @@ PY
     ros2 pkg prefix rm_description >/dev/null 2>&1 \
       && log OK "Existing rm_description package is visible to ROS." \
       || log WARN "rm_description is not visible yet; build this workspace or source an existing setup."
-    ros2 pkg prefix moveit_ros_move_group >/dev/null 2>&1 \
-      && log OK "MoveIt2 package moveit_ros_move_group is available." \
-      || log WARN "MoveIt2 package moveit_ros_move_group is missing."
+    for moveit_pkg in moveit_configs_utils moveit_kinematics moveit_planners_ompl moveit_ros_move_group moveit_ros_visualization; do
+      ros2 pkg prefix "$moveit_pkg" >/dev/null 2>&1 \
+        && log OK "MoveIt2 package $moveit_pkg is available." \
+        || log WARN "MoveIt2 package $moveit_pkg is missing."
+    done
     ros2 pkg prefix ros_gz_bridge >/dev/null 2>&1 \
       && log OK "ros_gz_bridge is available." \
       || log WARN "ros_gz_bridge is missing."
